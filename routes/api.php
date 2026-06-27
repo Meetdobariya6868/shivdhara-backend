@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\User\UserController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Route;
 
@@ -46,6 +47,21 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
             Route::get('/me', [AuthController::class, 'me'])->name('me');
         });
+    });
+
+    /*
+    |------------------------------------------------------------------
+    | User Management (Admin only — authorization via UserPolicy)
+    |------------------------------------------------------------------
+    */
+    Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::patch('/users/{user}/status', [UserController::class, 'updateStatus'])->name('users.status');
+        Route::patch('/users/{user}/password', [UserController::class, 'updatePassword'])->name('users.password');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     });
 
 });
