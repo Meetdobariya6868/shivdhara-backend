@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domain\Contracts\CustomerRepositoryInterface;
+use App\Domain\Contracts\OrderRepositoryInterface;
+use App\Domain\Contracts\UserRepositoryInterface;
+use App\Infrastructure\Persistence\Eloquent\Repositories\CustomerRepository;
+use App\Infrastructure\Persistence\Eloquent\Repositories\OrderRepository;
+use App\Infrastructure\Persistence\Eloquent\Repositories\UserRepository;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -23,8 +29,9 @@ class RepositoryServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     public array $repositories = [
-        // App\Domain\Contracts\ExampleRepositoryInterface::class
-        //     => App\Infrastructure\Persistence\Eloquent\ExampleRepository::class,
+        UserRepositoryInterface::class => UserRepository::class,
+        CustomerRepositoryInterface::class => CustomerRepository::class,
+        OrderRepositoryInterface::class => OrderRepository::class,
     ];
 
     /**
