@@ -5,64 +5,68 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\Enums\UserRole;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Domain\Enums\UserStatus;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-/**
- * Admin or Salesman (Manager/Viewer reserved). Authenticates by phone number.
- *
- * @property UserRole $role
- */
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, Notifiable, SoftDeletes;
 
-    /** @var list<string> */
     protected $fillable = [
         'name',
-        'phone',
-        'email',
-        'photo',
+        'mobile_number',
         'password',
         'role',
-        'is_active',
+        'status',
         'can_create_orders',
-        'login_mode',
-        'fcm_token',
+        'created_by_id',
     ];
 
-    /** @var list<string> */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ['password', 'remember_token'];
 
-    /** @return array<string, string> */
     protected function casts(): array
     {
         return [
-            'password' => 'hashed',
-            'role' => UserRole::class,
-            'is_active' => 'boolean',
+            'role'              => UserRole::class,
+            'status'            => UserStatus::class,
             'can_create_orders' => 'boolean',
-            'login_mode' => 'integer',
+            'password'          => 'hashed',
         ];
     }
 
-    /**
-     * Orders created by this user.
-     *
-     * @return HasMany<Order, $this>
-     */
+    /** Orders this user created. */
     public function orders(): HasMany
     {
-        return $this->hasMany(Order::class);
+        return $this->hasMany(Order::class, 'creator_id');
+    }
+
+    /** Orders this user last updated. */
+    public function updatedOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'updated_by_id');
+    }
+
+    /** Customers this user registered. */
+    public function customers(): HasMany
+    {
+        return $this->hasMany(Customer::class, 'created_by_id');
+    }
+
+    /** Users provisioned by this admin. */
+    public function createdUsers(): HasMany
+    {
+        return $this->hasMany(User::class, 'created_by_id');
+    }
+
+    /** The admin who provisioned this user. */
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by_id');
     }
 
     public function isAdmin(): bool
@@ -70,16 +74,13 @@ class User extends Authenticatable
         return $this->role === UserRole::Admin;
     }
 
-    /**
-     * Whether this user may create orders. Admins always may; salesmen are
-     * gated by both their active status and the admin-controlled permission.
-     */
+    public function isActive(): bool
+    {
+        return $this->status === UserStatus::Active;
+    }
+
     public function canCreateOrders(): bool
     {
-        if ($this->isAdmin()) {
-            return true;
-        }
-
-        return $this->is_active && $this->can_create_orders;
+        return $this->isActive() && $this->can_create_orders;
     }
 }

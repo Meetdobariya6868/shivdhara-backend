@@ -4,96 +4,86 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Domain\Enums\OrderStatus;
-use App\Domain\Enums\OrderType;
-use Database\Factories\OrderFactory;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/**
- * The order aggregate root. Header money columns (total_*) are derived
- * snapshots kept in sync by the service layer; treat them as read-only
- * outside that layer.
- *
- * @property OrderType $order_type
- * @property OrderStatus $order_status
- */
 class Order extends Model
 {
-    /** @use HasFactory<OrderFactory> */
-    use HasFactory, SoftDeletes;
+    use SoftDeletes;
 
-    /** @var list<string> */
     protected $fillable = [
         'order_number',
-        'user_id',
-        'customer_id',
-        'architect_id',
-        'category_id',
-        'order_type',
-        'order_status',
-        'transportation_charge',
-        'advance_amount',
-        'discount_amount',
-        'total_purchase',
-        'total_profit',
-        'total_price',
-        'notes',
         'order_date',
+        'customer_id',
+        'order_category_id',
+        'order_type_id',
+        'creator_id',
+        'advance_payment',
+        'transportation_charge',
+        'notes',
+        'total_purchase_amount',
+        'total_sell_amount',
+        'total_profit',
+        'grand_total',
+        'balance_due',
+        'updated_by_id',
     ];
 
-    /** @return array<string, string> */
     protected function casts(): array
     {
         return [
-            'order_type' => OrderType::class,
-            'order_status' => OrderStatus::class,
-            'transportation_charge' => 'decimal:2',
-            'advance_amount' => 'decimal:2',
-            'discount_amount' => 'decimal:2',
-            'total_purchase' => 'decimal:2',
-            'total_profit' => 'decimal:2',
-            'total_price' => 'decimal:2',
-            'order_date' => 'date',
+            'order_date'           => 'date',
+            'advance_payment'      => 'decimal:2',
+            'transportation_charge'=> 'decimal:2',
+            'total_purchase_amount'=> 'decimal:2',
+            'total_sell_amount'    => 'decimal:2',
+            'total_profit'         => 'decimal:2',
+            'grand_total'          => 'decimal:2',
+            'balance_due'          => 'decimal:2',
         ];
     }
 
-    /** @return BelongsTo<User, $this> */
-    public function creator(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-
-    /** @return BelongsTo<Customer, $this> */
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
     }
 
-    /** @return BelongsTo<Architect, $this> */
-    public function architect(): BelongsTo
+    public function orderCategory(): BelongsTo
     {
-        return $this->belongsTo(Architect::class);
+        return $this->belongsTo(OrderCategory::class, 'order_category_id');
     }
 
-    /** @return BelongsTo<Category, $this> */
-    public function category(): BelongsTo
+    public function orderType(): BelongsTo
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(OrderType::class, 'order_type_id');
     }
 
-    /** @return HasMany<OrderItem, $this> */
-    public function items(): HasMany
+    public function creator(): BelongsTo
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->belongsTo(User::class, 'creator_id');
     }
 
-    /** @return HasMany<OrderStatusHistory, $this> */
-    public function statusHistory(): HasMany
+    public function updatedBy(): BelongsTo
     {
-        return $this->hasMany(OrderStatusHistory::class);
+        return $this->belongsTo(User::class, 'updated_by_id');
+    }
+
+    public function rooms(): HasMany
+    {
+        return $this->hasMany(OrderRoom::class);
+    }
+
+    /** All items across every room in this order. */
+    public function items(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            OrderItem::class,
+            OrderRoom::class,
+            'order_id',  // FK on order_rooms
+            'room_id',   // FK on order_items
+        );
     }
 }

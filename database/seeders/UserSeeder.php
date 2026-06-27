@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Domain\Enums\UserRole;
+use App\Domain\Enums\UserStatus;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -13,51 +14,35 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $users = [
+        $admin = User::firstOrCreate(
+            ['mobile_number' => '9000000001'],
             [
-                'name'              => 'Admin User',
-                'phone'             => '9000000001',
-                'email'             => 'admin@shivdhara.com',
+                'name'              => 'Super Admin',
                 'password'          => Hash::make('password'),
                 'role'              => UserRole::Admin->value,
-                'is_active'         => true,
+                'status'            => UserStatus::Active->value,
                 'can_create_orders' => true,
-                'login_mode'        => 1,
             ],
-            [
-                'name'              => 'Ravi Sales',
-                'phone'             => '9000000002',
-                'email'             => null,
-                'password'          => Hash::make('password'),
-                'role'              => UserRole::Salesman->value,
-                'is_active'         => true,
-                'can_create_orders' => true,
-                'login_mode'        => 1,
-            ],
-            [
-                'name'              => 'Priya Salesman',
-                'phone'             => '9000000003',
-                'email'             => null,
-                'password'          => Hash::make('password'),
-                'role'              => UserRole::Salesman->value,
-                'is_active'         => true,
-                'can_create_orders' => false,
-                'login_mode'        => 1,
-            ],
-            [
-                'name'              => 'Manager User',
-                'phone'             => '9000000004',
-                'email'             => 'manager@shivdhara.com',
-                'password'          => Hash::make('password'),
-                'role'              => UserRole::Manager->value,
-                'is_active'         => true,
-                'can_create_orders' => false,
-                'login_mode'        => 1,
-            ],
+        );
+
+        $salesmen = [
+            ['name' => 'Ravi Sharma',  'mobile_number' => '9000000002', 'can_create_orders' => true],
+            ['name' => 'Priya Mehta',  'mobile_number' => '9000000003', 'can_create_orders' => false],
+            ['name' => 'Arjun Patel',  'mobile_number' => '9000000004', 'can_create_orders' => true],
         ];
 
-        foreach ($users as $data) {
-            User::firstOrCreate(['phone' => $data['phone']], $data);
+        foreach ($salesmen as $data) {
+            User::firstOrCreate(
+                ['mobile_number' => $data['mobile_number']],
+                [
+                    'name'              => $data['name'],
+                    'password'          => Hash::make('password'),
+                    'role'              => UserRole::Salesman->value,
+                    'status'            => UserStatus::Active->value,
+                    'can_create_orders' => $data['can_create_orders'],
+                    'created_by_id'     => $admin->id,
+                ],
+            );
         }
     }
 }

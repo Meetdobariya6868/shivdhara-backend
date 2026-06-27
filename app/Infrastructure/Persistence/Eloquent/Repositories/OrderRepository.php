@@ -23,17 +23,14 @@ class OrderRepository extends BaseRepository implements OrderRepositoryInterface
     public function paginateWithFilters(array $filters, int $perPage = 15): LengthAwarePaginator
     {
         return $this->model->newQuery()
-            // Eager-load to avoid N+1 on the listing screen.
-            ->with(['customer', 'creator', 'architect', 'category'])
-            ->when($filters['date_from'] ?? null, fn ($q, $v) => $q->whereDate('order_date', '>=', $v))
-            ->when($filters['date_to'] ?? null, fn ($q, $v) => $q->whereDate('order_date', '<=', $v))
-            ->when($filters['customer_id'] ?? null, fn ($q, $v) => $q->where('customer_id', $v))
-            ->when($filters['user_id'] ?? null, fn ($q, $v) => $q->where('user_id', $v))
-            ->when($filters['architect_id'] ?? null, fn ($q, $v) => $q->where('architect_id', $v))
-            ->when($filters['category_id'] ?? null, fn ($q, $v) => $q->where('category_id', $v))
-            ->when($filters['order_type'] ?? null, fn ($q, $v) => $q->where('order_type', $v))
-            ->when(isset($filters['order_status']), fn ($q) => $q->where('order_status', $filters['order_status']))
-            ->when($filters['search'] ?? null, fn ($q, $v) => $q->where('order_number', 'like', "%{$v}%"))
+            ->with(['customer', 'creator', 'orderCategory', 'orderType'])
+            ->when($filters['date_from'] ?? null,         fn ($q, $v) => $q->whereDate('order_date', '>=', $v))
+            ->when($filters['date_to'] ?? null,           fn ($q, $v) => $q->whereDate('order_date', '<=', $v))
+            ->when($filters['customer_id'] ?? null,       fn ($q, $v) => $q->where('customer_id', $v))
+            ->when($filters['creator_id'] ?? null,        fn ($q, $v) => $q->where('creator_id', $v))
+            ->when($filters['order_category_id'] ?? null, fn ($q, $v) => $q->where('order_category_id', $v))
+            ->when($filters['order_type_id'] ?? null,     fn ($q, $v) => $q->where('order_type_id', $v))
+            ->when($filters['search'] ?? null,            fn ($q, $v) => $q->where('order_number', 'like', "%{$v}%"))
             ->latest()
             ->paginate($perPage);
     }

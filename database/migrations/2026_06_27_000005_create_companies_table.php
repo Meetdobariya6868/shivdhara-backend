@@ -6,20 +6,19 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Surface finishes (Matt, Glossy, Satin, Polished, …).
-     */
     public function up(): void
     {
-        Schema::create('product_finishes', function (Blueprint $table) {
+        Schema::create('companies', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 50)->unique();
+            $table->string('company_name', 120)->unique();
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('product_finishes');
+        Schema::dropIfExists('companies');
     }
 };

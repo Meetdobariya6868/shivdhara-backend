@@ -15,10 +15,10 @@ class CustomerRepository extends BaseRepository implements CustomerRepositoryInt
         parent::__construct($model);
     }
 
-    public function findByPhone(string $phone): ?Customer
+    public function findByContact(string $contact): ?Customer
     {
         /** @var Customer|null $customer */
-        $customer = $this->model->newQuery()->where('phone', $phone)->first();
+        $customer = $this->model->newQuery()->where('contact', $contact)->first();
 
         return $customer;
     }

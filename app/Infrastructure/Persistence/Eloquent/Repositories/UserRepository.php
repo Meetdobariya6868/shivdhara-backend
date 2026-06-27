@@ -8,9 +8,6 @@ use App\Domain\Contracts\UserRepositoryInterface;
 use App\Infrastructure\Persistence\Eloquent\BaseRepository;
 use App\Models\User;
 
-/**
- * @extends BaseRepository
- */
 class UserRepository extends BaseRepository implements UserRepositoryInterface
 {
     public function __construct(User $model)
@@ -18,10 +15,10 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
         parent::__construct($model);
     }
 
-    public function findByPhone(string $phone): ?User
+    public function findByMobile(string $mobile): ?User
     {
         /** @var User|null $user */
-        $user = $this->model->newQuery()->where('phone', $phone)->first();
+        $user = $this->model->newQuery()->where('mobile_number', $mobile)->first();
 
         return $user;
     }

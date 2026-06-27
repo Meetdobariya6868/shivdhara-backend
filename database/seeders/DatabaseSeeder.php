@@ -11,12 +11,10 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            UserSeeder::class,       // no FK deps
-            CustomerSeeder::class,   // no FK deps
-            ArchitectSeeder::class,  // no FK deps
-            CatalogSeeder::class,    // companies → categories → sizes → finishes → design_codes
-            OrderSeeder::class,      // orders → order_items → order_status_history → payments
-            AppVersionSeeder::class, // standalone
+            UserSeeder::class,     // no FK deps
+            CustomerSeeder::class, // depends on users
+            CatalogSeeder::class,  // companies → designs → design_variants
+            OrderSeeder::class,    // orders → order_rooms → order_items
         ]);
     }
 }
