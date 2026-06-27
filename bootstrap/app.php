@@ -19,7 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->statefulApi();
+        // Token-based API authentication (Bearer tokens via Authorization
+        // header). We intentionally do NOT enable statefulApi() / cookie-based
+        // SPA auth — that would enforce CSRF verification (causing 419 errors)
+        // and is incompatible with the localStorage bearer-token flow the SPA uses.
 
         $middleware->alias([
             'active' => EnsureUserIsActive::class,
