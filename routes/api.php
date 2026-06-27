@@ -2,25 +2,50 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\Auth\AuthController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| API Routes
+| API Routes — v1
 |--------------------------------------------------------------------------
 |
-| Loaded by bootstrap/app.php and automatically prefixed with "/api". Routes
-| are versioned ("/api/v1/...") so the contract can evolve without breaking
-| existing clients. Business endpoints arrive in later phases; for now we
-| expose only an unauthenticated, dependency-free health probe.
+| All routes are prefixed with /api (bootstrap/app.php) + /v1 (below).
+| Business modules are added per phase. Auth is Phase 1.
 |
 */
 
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
+
+    /*
+    |------------------------------------------------------------------
+    | Health Probe — unauthenticated, no rate limit
+    |------------------------------------------------------------------
+    */
     Route::get('/health', static fn (): JsonResponse => response()->json([
-        'status' => 'ok',
+        'status'  => 'ok',
         'service' => config('app.name'),
         'version' => 'v1',
     ]))->name('health');
+
+    /*
+    |------------------------------------------------------------------
+    | Authentication
+    |------------------------------------------------------------------
+    */
+    Route::prefix('auth')->name('auth.')->group(function (): void {
+
+        // Public — rate-limited to 5 attempts/min per mobile number
+        Route::post('/login', [AuthController::class, 'login'])
+            ->middleware('throttle:auth.login')
+            ->name('login');
+
+        // Protected — requires valid Sanctum token + active account
+        Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
+            Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+            Route::get('/me', [AuthController::class, 'me'])->name('me');
+        });
+    });
+
 });
