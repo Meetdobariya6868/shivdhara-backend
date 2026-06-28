@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domain\Contracts\OrderRepositoryInterface;
+use App\Domain\Contracts\UserRepositoryInterface;
 use App\Events\Auth\UserLoggedIn;
 use App\Events\Auth\UserLoggedOut;
+use App\Infrastructure\Persistence\Eloquent\Repositories\OrderRepository;
+use App\Infrastructure\Persistence\Eloquent\Repositories\UserRepository;
 use App\Listeners\Auth\LogSuccessfulLogin;
 use App\Listeners\Auth\LogSuccessfulLogout;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -17,7 +21,11 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
+    public function register(): void
+    {
+        $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
+        $this->app->bind(OrderRepositoryInterface::class, OrderRepository::class);
+    }
 
     public function boot(): void
     {

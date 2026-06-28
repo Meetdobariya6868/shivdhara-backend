@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\Order\OrderController;
 use App\Http\Controllers\Api\V1\User\UserController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Route;
@@ -62,6 +63,20 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::patch('/users/{user}/status', [UserController::class, 'updateStatus'])->name('users.status');
         Route::patch('/users/{user}/password', [UserController::class, 'updatePassword'])->name('users.password');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
+
+    /*
+    |------------------------------------------------------------------
+    | Orders (Phase 5 — read layer)
+    |------------------------------------------------------------------
+    */
+    Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
+        // Admin-only list (authorization enforced via OrderPolicy)
+        Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+
+        // Reference data — available to all authenticated users (needed for create order)
+        Route::get('/order-categories', [OrderController::class, 'categories'])->name('orders.categories');
+        Route::get('/order-types', [OrderController::class, 'types'])->name('orders.types');
     });
 
 });
