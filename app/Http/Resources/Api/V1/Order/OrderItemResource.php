@@ -42,6 +42,7 @@ final class OrderItemResource extends JsonResource
             'total_pieces'     => $this->total_pieces,
             'purchase_amount'  => $this->purchase_amount,
             'sell_amount'      => $this->sell_amount,
+            'product_total'    => $this->product_total,
         ];
     }
 }

@@ -55,6 +55,7 @@ final class StoreOrderRequest extends FormRequest
             'rooms.*.items.*.width'              => ['required', 'numeric', 'gt:0'],
             'rooms.*.items.*.purchase_rate'      => ['required', 'numeric', 'min:0'],
             'rooms.*.items.*.sell_rate'          => ['required', 'numeric', 'min:0'],
+            'rooms.*.items.*.product_total'      => ['required', 'numeric', 'min:0'],
 
             // Box-only quantities
             'rooms.*.items.*.pieces_per_box'  => ['nullable', 'required_if:rooms.*.items.*.item_type,box', 'integer', 'min:1'],

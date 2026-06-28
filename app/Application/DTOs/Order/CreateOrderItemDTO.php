@@ -11,8 +11,9 @@ use App\Application\DTOs\BaseDTO;
  * "Add Detail" popup. Product attributes (company/design/size/finish/thickness)
  * are free text — the service find-or-creates the matching catalogue records.
  *
- * Financial totals are NOT carried here: the server recomputes them
- * authoritatively from these inputs (never trusting client-side maths).
+ * Purchase/sell amounts are recomputed server-side from these inputs. The
+ * line's product_total is supplied here because it is user-editable in the
+ * "Add Detail" popup (auto-filled from the formula, but overridable).
  */
 final class CreateOrderItemDTO extends BaseDTO
 {
@@ -32,6 +33,7 @@ final class CreateOrderItemDTO extends BaseDTO
         public readonly float $width,
         public readonly float $purchaseRate,
         public readonly float $sellRate,
+        public readonly float $productTotal,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -53,6 +55,7 @@ final class CreateOrderItemDTO extends BaseDTO
             width: (float) $data['width'],
             purchaseRate: (float) $data['purchase_rate'],
             sellRate: (float) $data['sell_rate'],
+            productTotal: (float) $data['product_total'],
         );
     }
 
@@ -75,6 +78,7 @@ final class CreateOrderItemDTO extends BaseDTO
             'width'              => $this->width,
             'purchase_rate'      => $this->purchaseRate,
             'sell_rate'          => $this->sellRate,
+            'product_total'      => $this->productTotal,
         ];
     }
 }

@@ -72,6 +72,7 @@ class OrderSeeder extends Seeder
                 'total_pieces'      => 40,
                 'purchase_amount'   => 6080.00,
                 'sell_amount'       => 8320.00,
+                'product_total'        => 8320.00,
                 'sort_order'        => 0,
             ]);
 
@@ -93,6 +94,7 @@ class OrderSeeder extends Seeder
                 'total_pieces'      => 16,
                 'purchase_amount'   => 4778.67,
                 'sell_amount'       => 6599.11,
+                'product_total'        => 6599.11,
                 'sort_order'        => 0,
             ]);
         });
@@ -133,6 +135,7 @@ class OrderSeeder extends Seeder
                 'total_pieces'      => 24,
                 'purchase_amount'   => 12480.00,
                 'sell_amount'       => 16896.00,
+                'product_total'        => 16896.00,
                 'sort_order'        => 0,
             ]);
         });
@@ -171,6 +174,7 @@ class OrderSeeder extends Seeder
                 'total_pieces'      => 60,
                 'purchase_amount'   => 1080.00,
                 'sell_amount'       => 1560.00,
+                'product_total'        => 1560.00,
                 'sort_order'        => 0,
             ]);
         });

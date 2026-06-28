@@ -27,6 +27,7 @@ return new class extends Migration
             $table->unsignedInteger('total_pieces');
             $table->decimal('purchase_amount', 14, 2);
             $table->decimal('sell_amount', 14, 2);
+            $table->decimal('product_total', 14, 2);
 
             $table->integer('sort_order')->default(0);
             $table->timestamps();

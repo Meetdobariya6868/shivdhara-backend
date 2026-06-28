@@ -29,6 +29,7 @@ class OrderItem extends Model
         'total_pieces',
         'purchase_amount',
         'sell_amount',
+        'product_total',
         'sort_order',
     ];
 
@@ -47,6 +48,7 @@ class OrderItem extends Model
             'sqft_rate'       => 'decimal:2',
             'purchase_amount' => 'decimal:2',
             'sell_amount'     => 'decimal:2',
+            'product_total'      => 'decimal:2',
         ];
     }
 

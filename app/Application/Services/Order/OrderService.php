@@ -81,8 +81,8 @@ final class OrderService extends BaseService
                     'created_by_id' => $creator->id,
                 ]);
 
-            $roomsData = [];
-            $orderSell = 0.0;
+            $roomsData         = [];
+            $orderProductTotal = 0.0;
 
             foreach ($dto->rooms as $roomDto) {
                 $itemsData = [];
@@ -127,10 +127,11 @@ final class OrderService extends BaseService
                         'total_pieces'       => $totals['total_pieces'],
                         'purchase_amount'    => $totals['purchase_amount'],
                         'sell_amount'        => $totals['sell_amount'],
+                        'product_total'      => $itemDto->productTotal,
                         'sort_order'         => $index,
                     ];
 
-                    $orderSell += $totals['sell_amount'];
+                    $orderProductTotal += $itemDto->productTotal;
                 }
 
                 $roomsData[] = [
@@ -140,7 +141,7 @@ final class OrderService extends BaseService
                 ];
             }
 
-            $grandTotal = round($orderSell + $dto->transportationCharge, 2);
+            $grandTotal = round($orderProductTotal + $dto->transportationCharge, 2);
 
             return $this->orderRepository->createGraph(
                 orderAttributes: [
