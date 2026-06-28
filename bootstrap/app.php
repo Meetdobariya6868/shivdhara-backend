@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -86,6 +87,39 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
             return null;
+        });
+
+        // Catch-all for any other exception on API requests. Runs only when no
+        // handler above matched (e.g. a QueryException). Guarantees the client
+        // always receives a clean, structured message and NEVER raw SQL or a
+        // stack trace. The framework still logs the full exception server-side;
+        // real detail is exposed only under a separate `debug` key in local.
+        $exceptions->render(function (\Throwable $e, Request $request): ?Response {
+            if (! ($request->expectsJson() || $request->is('api/*'))) {
+                return null;
+            }
+
+            // Preserve intentional HTTP exceptions (404, 405, 429, …) and their codes.
+            if ($e instanceof HttpExceptionInterface) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage() ?: 'The request could not be processed.',
+                ], $e->getStatusCode());
+            }
+
+            $payload = [
+                'success' => false,
+                'message' => 'Something went wrong on our end. Please try again.',
+            ];
+
+            if (config('app.debug')) {
+                $payload['debug'] = [
+                    'exception' => $e::class,
+                    'message'   => $e->getMessage(),
+                ];
+            }
+
+            return response()->json($payload, Response::HTTP_INTERNAL_SERVER_ERROR);
         });
 
     })->create();

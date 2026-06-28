@@ -17,8 +17,8 @@ return new class extends Migration
         });
 
         DB::table('order_categories')->insert([
-            ['name' => 'marble',  'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'granito', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Marble',  'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Granito', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 

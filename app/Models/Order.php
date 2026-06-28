@@ -15,7 +15,6 @@ class Order extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'order_number',
         'order_date',
         'customer_id',
         'order_category_id',
@@ -24,25 +23,17 @@ class Order extends Model
         'advance_payment',
         'transportation_charge',
         'notes',
-        'total_purchase_amount',
-        'total_sell_amount',
-        'total_profit',
         'grand_total',
-        'balance_due',
         'updated_by_id',
     ];
 
     protected function casts(): array
     {
         return [
-            'order_date'           => 'date',
-            'advance_payment'      => 'decimal:2',
-            'transportation_charge'=> 'decimal:2',
-            'total_purchase_amount'=> 'decimal:2',
-            'total_sell_amount'    => 'decimal:2',
-            'total_profit'         => 'decimal:2',
-            'grand_total'          => 'decimal:2',
-            'balance_due'          => 'decimal:2',
+            'order_date'            => 'date',
+            'advance_payment'       => 'decimal:2',
+            'transportation_charge' => 'decimal:2',
+            'grand_total'           => 'decimal:2',
         ];
     }
 

@@ -10,7 +10,6 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->string('order_number', 30)->unique();
             $table->date('order_date')->index();
 
             $table->foreignId('customer_id')->constrained('customers')->restrictOnDelete();
@@ -22,11 +21,9 @@ return new class extends Migration
             $table->decimal('transportation_charge', 14, 2)->default(0);
             $table->text('notes')->nullable();
 
-            $table->decimal('total_purchase_amount', 14, 2)->default(0);
-            $table->decimal('total_sell_amount', 14, 2)->default(0);
-            $table->decimal('total_profit', 14, 2)->default(0);
+            // Single stored aggregate: total sell amount + transportation.
+            // Profit / balance / sub-totals are derived on read, not stored.
             $table->decimal('grand_total', 14, 2)->default(0);
-            $table->decimal('balance_due', 14, 2)->default(0);
 
             $table->foreignId('updated_by_id')->nullable()->constrained('users')->nullOnDelete();
 

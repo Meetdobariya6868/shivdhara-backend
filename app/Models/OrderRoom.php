@@ -17,20 +17,12 @@ class OrderRoom extends Model
         'order_id',
         'room_name',
         'sort_order',
-        'total_sqft',
-        'total_purchase',
-        'total_sell',
-        'total_profit',
     ];
 
     protected function casts(): array
     {
         return [
-            'sort_order'    => 'integer',
-            'total_sqft'    => 'decimal:4',
-            'total_purchase'=> 'decimal:2',
-            'total_sell'    => 'decimal:2',
-            'total_profit'  => 'decimal:2',
+            'sort_order' => 'integer',
         ];
     }
 

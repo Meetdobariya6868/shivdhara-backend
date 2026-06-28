@@ -23,15 +23,10 @@ return new class extends Migration
             $table->enum('measurement_unit', ['mm', 'inch', 'feet']);
             $table->decimal('height', 10, 3);
             $table->decimal('width', 10, 3);
-            $table->decimal('area_sqft', 14, 4);
+            $table->decimal('sqft_rate', 12, 2);
             $table->unsignedInteger('total_pieces');
-            $table->decimal('total_sqft', 14, 4);
-
-            $table->decimal('purchase_rate', 12, 2);
-            $table->decimal('sell_rate', 12, 2);
             $table->decimal('purchase_amount', 14, 2);
             $table->decimal('sell_amount', 14, 2);
-            $table->decimal('profit', 14, 2);
 
             $table->integer('sort_order')->default(0);
             $table->timestamps();

@@ -81,17 +81,11 @@ final class OrderService extends BaseService
                     'created_by_id' => $creator->id,
                 ]);
 
-            $roomsData       = [];
-            $orderPurchase   = 0.0;
-            $orderSell       = 0.0;
-            $orderProfit     = 0.0;
+            $roomsData = [];
+            $orderSell = 0.0;
 
             foreach ($dto->rooms as $roomDto) {
-                $itemsData    = [];
-                $roomSqft     = 0.0;
-                $roomPurchase = 0.0;
-                $roomSell     = 0.0;
-                $roomProfit   = 0.0;
+                $itemsData = [];
 
                 foreach ($roomDto->items as $index => $itemDto) {
                     $type = ItemType::from($itemDto->itemType);
@@ -129,40 +123,24 @@ final class OrderService extends BaseService
                         'measurement_unit'   => $unit->value,
                         'height'             => $itemDto->height,
                         'width'              => $itemDto->width,
-                        'area_sqft'          => $totals['area_sqft'],
+                        'sqft_rate'          => $itemDto->sellRate,
                         'total_pieces'       => $totals['total_pieces'],
-                        'total_sqft'         => $totals['total_sqft'],
-                        'purchase_rate'      => $itemDto->purchaseRate,
-                        'sell_rate'          => $itemDto->sellRate,
                         'purchase_amount'    => $totals['purchase_amount'],
                         'sell_amount'        => $totals['sell_amount'],
-                        'profit'             => $totals['profit'],
                         'sort_order'         => $index,
                     ];
 
-                    $roomSqft     += $totals['total_sqft'];
-                    $roomPurchase += $totals['purchase_amount'];
-                    $roomSell     += $totals['sell_amount'];
-                    $roomProfit   += $totals['profit'];
+                    $orderSell += $totals['sell_amount'];
                 }
 
                 $roomsData[] = [
-                    'room_name'      => $roomDto->roomName,
-                    'sort_order'     => $roomDto->sortOrder,
-                    'total_sqft'     => round($roomSqft, 4),
-                    'total_purchase' => round($roomPurchase, 2),
-                    'total_sell'     => round($roomSell, 2),
-                    'total_profit'   => round($roomProfit, 2),
-                    'items'          => $itemsData,
+                    'room_name'  => $roomDto->roomName,
+                    'sort_order' => $roomDto->sortOrder,
+                    'items'      => $itemsData,
                 ];
-
-                $orderPurchase += $roomPurchase;
-                $orderSell     += $roomSell;
-                $orderProfit   += $roomProfit;
             }
 
             $grandTotal = round($orderSell + $dto->transportationCharge, 2);
-            $balanceDue = round($grandTotal - $dto->advancePayment, 2);
 
             return $this->orderRepository->createGraph(
                 orderAttributes: [
@@ -174,11 +152,7 @@ final class OrderService extends BaseService
                     'advance_payment'       => $dto->advancePayment,
                     'transportation_charge' => $dto->transportationCharge,
                     'notes'                 => $dto->notes,
-                    'total_purchase_amount' => round($orderPurchase, 2),
-                    'total_sell_amount'     => round($orderSell, 2),
-                    'total_profit'          => round($orderProfit, 2),
                     'grand_total'           => $grandTotal,
-                    'balance_due'           => $balanceDue,
                 ],
                 roomsData: $roomsData,
             );

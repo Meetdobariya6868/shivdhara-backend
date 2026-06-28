@@ -39,12 +39,11 @@ class OrderSeeder extends Seeder
 
         // ── Order 1 ───────────────────────────────────────────────────────
         DB::transaction(function () use ($admin, $c1, $marble, $local, $v1, $v2) {
-            if (Order::where('order_number', 'SHV-2026-0001')->exists()) {
+            if (Order::where('customer_id', $c1->id)->where('order_date', '2026-06-01')->exists()) {
                 return;
             }
 
             $order = Order::create([
-                'order_number'          => 'SHV-2026-0001',
                 'order_date'            => '2026-06-01',
                 'customer_id'           => $c1->id,
                 'order_category_id'     => $marble->id,
@@ -52,21 +51,13 @@ class OrderSeeder extends Seeder
                 'creator_id'            => $admin->id,
                 'advance_payment'       => 5000.00,
                 'transportation_charge' => 500.00,
-                'total_purchase_amount' => 10858.76,
-                'total_sell_amount'     => 14919.24,
-                'total_profit'          => 4060.48,
                 'grand_total'           => 15419.24,
-                'balance_due'           => 10419.24,
             ]);
 
             $room1 = OrderRoom::create([
-                'order_id'      => $order->id,
-                'room_name'     => 'Living Room',
-                'sort_order'    => 0,
-                'total_sqft'    => 160.00,
-                'total_purchase'=> 6080.00,
-                'total_sell'    => 8320.00,
-                'total_profit'  => 2240.00,
+                'order_id'   => $order->id,
+                'room_name'  => 'Living Room',
+                'sort_order' => 0,
             ]);
 
             $room1->items()->create([
@@ -77,25 +68,17 @@ class OrderSeeder extends Seeder
                 'measurement_unit'  => MeasurementUnit::Inch->value,
                 'height'            => 24.000,
                 'width'             => 24.000,
-                'area_sqft'         => 4.0000,
+                'sqft_rate'         => 52.00,
                 'total_pieces'      => 40,
-                'total_sqft'        => 160.0000,
-                'purchase_rate'     => 38.00,
-                'sell_rate'         => 52.00,
                 'purchase_amount'   => 6080.00,
                 'sell_amount'       => 8320.00,
-                'profit'            => 2240.00,
                 'sort_order'        => 0,
             ]);
 
             $room2 = OrderRoom::create([
-                'order_id'      => $order->id,
-                'room_name'     => 'Bedroom',
-                'sort_order'    => 1,
-                'total_sqft'    => 113.78,
-                'total_purchase'=> 4778.76,
-                'total_sell'    => 6599.24,
-                'total_profit'  => 1820.48,
+                'order_id'   => $order->id,
+                'room_name'  => 'Bedroom',
+                'sort_order' => 1,
             ]);
 
             $room2->items()->create([
@@ -106,26 +89,21 @@ class OrderSeeder extends Seeder
                 'measurement_unit'  => MeasurementUnit::Inch->value,
                 'height'            => 32.000,
                 'width'             => 32.000,
-                'area_sqft'         => 7.1111,
+                'sqft_rate'         => 58.00,
                 'total_pieces'      => 16,
-                'total_sqft'        => 113.7778,
-                'purchase_rate'     => 42.00,
-                'sell_rate'         => 58.00,
                 'purchase_amount'   => 4778.67,
                 'sell_amount'       => 6599.11,
-                'profit'            => 1820.44,
                 'sort_order'        => 0,
             ]);
         });
 
         // ── Order 2 ───────────────────────────────────────────────────────
         DB::transaction(function () use ($salesman, $c2, $granito, $arch, $v3) {
-            if (Order::where('order_number', 'SHV-2026-0002')->exists()) {
+            if (Order::where('customer_id', $c2->id)->where('order_date', '2026-06-10')->exists()) {
                 return;
             }
 
             $order = Order::create([
-                'order_number'          => 'SHV-2026-0002',
                 'order_date'            => '2026-06-10',
                 'customer_id'           => $c2->id,
                 'order_category_id'     => $granito->id,
@@ -134,21 +112,13 @@ class OrderSeeder extends Seeder
                 'advance_payment'       => 10000.00,
                 'transportation_charge' => 1200.00,
                 'notes'                 => 'Full home renovation via architect referral.',
-                'total_purchase_amount' => 12480.00,
-                'total_sell_amount'     => 16896.00,
-                'total_profit'          => 4416.00,
                 'grand_total'           => 18096.00,
-                'balance_due'           => 8096.00,
             ]);
 
             $room = OrderRoom::create([
-                'order_id'      => $order->id,
-                'room_name'     => 'Hall',
-                'sort_order'    => 0,
-                'total_sqft'    => 192.00,
-                'total_purchase'=> 12480.00,
-                'total_sell'    => 16896.00,
-                'total_profit'  => 4416.00,
+                'order_id'   => $order->id,
+                'room_name'  => 'Hall',
+                'sort_order' => 0,
             ]);
 
             $room->items()->create([
@@ -159,26 +129,21 @@ class OrderSeeder extends Seeder
                 'measurement_unit'  => MeasurementUnit::Inch->value,
                 'height'            => 24.000,
                 'width'             => 48.000,
-                'area_sqft'         => 8.0000,
+                'sqft_rate'         => 88.00,
                 'total_pieces'      => 24,
-                'total_sqft'        => 192.0000,
-                'purchase_rate'     => 65.00,
-                'sell_rate'         => 88.00,
                 'purchase_amount'   => 12480.00,
                 'sell_amount'       => 16896.00,
-                'profit'            => 4416.00,
                 'sort_order'        => 0,
             ]);
         });
 
         // ── Order 3 (piece-type items) ────────────────────────────────────
         DB::transaction(function () use ($admin, $c3, $marble, $local, $v4) {
-            if (Order::where('order_number', 'SHV-2026-0003')->exists()) {
+            if (Order::where('customer_id', $c3->id)->where('order_date', '2026-06-20')->exists()) {
                 return;
             }
 
             $order = Order::create([
-                'order_number'          => 'SHV-2026-0003',
                 'order_date'            => '2026-06-20',
                 'customer_id'           => $c3->id,
                 'order_category_id'     => $marble->id,
@@ -186,21 +151,13 @@ class OrderSeeder extends Seeder
                 'creator_id'            => $admin->id,
                 'advance_payment'       => 0.00,
                 'transportation_charge' => 0.00,
-                'total_purchase_amount' => 1080.00,
-                'total_sell_amount'     => 1560.00,
-                'total_profit'          => 480.00,
                 'grand_total'           => 1560.00,
-                'balance_due'           => 1560.00,
             ]);
 
             $room = OrderRoom::create([
-                'order_id'      => $order->id,
-                'room_name'     => 'Kitchen',
-                'sort_order'    => 0,
-                'total_sqft'    => 60.00,
-                'total_purchase'=> 1080.00,
-                'total_sell'    => 1560.00,
-                'total_profit'  => 480.00,
+                'order_id'   => $order->id,
+                'room_name'  => 'Kitchen',
+                'sort_order' => 0,
             ]);
 
             $room->items()->create([
@@ -210,14 +167,10 @@ class OrderSeeder extends Seeder
                 'measurement_unit'  => MeasurementUnit::Inch->value,
                 'height'            => 12.000,
                 'width'             => 12.000,
-                'area_sqft'         => 1.0000,
+                'sqft_rate'         => 26.00,
                 'total_pieces'      => 60,
-                'total_sqft'        => 60.0000,
-                'purchase_rate'     => 18.00,
-                'sell_rate'         => 26.00,
                 'purchase_amount'   => 1080.00,
                 'sell_amount'       => 1560.00,
-                'profit'            => 480.00,
                 'sort_order'        => 0,
             ]);
         });

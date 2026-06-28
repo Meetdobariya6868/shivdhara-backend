@@ -13,7 +13,6 @@ return new class extends Migration
             $table->foreignId('company_id')->constrained('companies')->restrictOnDelete();
             $table->string('design_code', 60);
             $table->string('design_name', 120)->index();
-            $table->string('image_path', 255)->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();

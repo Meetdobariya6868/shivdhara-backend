@@ -25,14 +25,10 @@ class OrderItem extends Model
         'measurement_unit',
         'height',
         'width',
-        'area_sqft',
+        'sqft_rate',
         'total_pieces',
-        'total_sqft',
-        'purchase_rate',
-        'sell_rate',
         'purchase_amount',
         'sell_amount',
-        'profit',
         'sort_order',
     ];
 
@@ -48,13 +44,9 @@ class OrderItem extends Model
             'sort_order'      => 'integer',
             'height'          => 'decimal:3',
             'width'           => 'decimal:3',
-            'area_sqft'       => 'decimal:4',
-            'total_sqft'      => 'decimal:4',
-            'purchase_rate'   => 'decimal:2',
-            'sell_rate'       => 'decimal:2',
+            'sqft_rate'       => 'decimal:2',
             'purchase_amount' => 'decimal:2',
             'sell_amount'     => 'decimal:2',
-            'profit'          => 'decimal:2',
         ];
     }
 

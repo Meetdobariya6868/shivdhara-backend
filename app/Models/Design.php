@@ -17,7 +17,6 @@ class Design extends Model
         'company_id',
         'design_code',
         'design_name',
-        'image_path',
         'is_active',
     ];
 

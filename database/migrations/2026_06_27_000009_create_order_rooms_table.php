@@ -14,11 +14,6 @@ return new class extends Migration
             $table->string('room_name', 80);
             $table->integer('sort_order')->default(0);
 
-            $table->decimal('total_sqft', 14, 4)->default(0);
-            $table->decimal('total_purchase', 14, 2)->default(0);
-            $table->decimal('total_sell', 14, 2)->default(0);
-            $table->decimal('total_profit', 14, 2)->default(0);
-
             $table->timestamps();
             $table->softDeletes();
 

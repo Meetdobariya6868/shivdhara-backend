@@ -17,9 +17,9 @@ return new class extends Migration
         });
 
         DB::table('order_types')->insert([
-            ['name' => 'local',    'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'retailer', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['name' => 'architect','is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Local',    'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Retailer', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Architect','is_active' => true, 'created_at' => now(), 'updated_at' => now()],
         ]);
     }
 

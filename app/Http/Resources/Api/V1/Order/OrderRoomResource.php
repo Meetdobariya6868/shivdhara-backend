@@ -16,14 +16,10 @@ final class OrderRoomResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'             => $this->id,
-            'room_name'      => $this->room_name,
-            'sort_order'     => $this->sort_order,
-            'total_sqft'     => $this->total_sqft,
-            'total_purchase' => $this->total_purchase,
-            'total_sell'     => $this->total_sell,
-            'total_profit'   => $this->total_profit,
-            'items'          => OrderItemResource::collection($this->whenLoaded('items')),
+            'id'         => $this->id,
+            'room_name'  => $this->room_name,
+            'sort_order' => $this->sort_order,
+            'items'      => OrderItemResource::collection($this->whenLoaded('items')),
         ];
     }
 }
