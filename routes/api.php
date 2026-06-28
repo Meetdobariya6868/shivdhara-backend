@@ -74,6 +74,10 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         // Admin-only list (authorization enforced via OrderPolicy)
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
 
+        // Create order — shared by admin + salesman (authorization via OrderPolicy@create)
+        Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+        Route::post('/order-item-images', [OrderController::class, 'uploadItemImage'])->name('orders.item-images.store');
+
         // Reference data — available to all authenticated users (needed for create order)
         Route::get('/order-categories', [OrderController::class, 'categories'])->name('orders.categories');
         Route::get('/order-types', [OrderController::class, 'types'])->name('orders.types');

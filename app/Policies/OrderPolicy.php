@@ -24,4 +24,10 @@ final class OrderPolicy
     {
         return $user->isAdmin() || $order->creator_id === $user->id;
     }
+
+    /** Admins, and salesmen explicitly granted the flag, may create orders. */
+    public function create(User $user): bool
+    {
+        return $user->isAdmin() || $user->can_create_orders;
+    }
 }

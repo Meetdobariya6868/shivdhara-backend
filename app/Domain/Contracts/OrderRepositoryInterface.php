@@ -21,4 +21,15 @@ interface OrderRepositoryInterface extends RepositoryInterface
      * @return Collection<int, Order>
      */
     public function listAll(): Collection;
+
+    /**
+     * Persist a full order graph (order → rooms → items) in one place.
+     * The order number is generated from the new order's id. The caller is
+     * responsible for wrapping this in a transaction.
+     *
+     * @param  array<string, mixed>  $orderAttributes  Fully-resolved order columns (no order_number).
+     * @param  list<array<string, mixed>>  $roomsData    Each room's columns plus an `items` list of item columns.
+     * @return Order  Reloaded with rooms.items.designVariant.design.company and order relations.
+     */
+    public function createGraph(array $orderAttributes, array $roomsData): Order;
 }

@@ -44,6 +44,7 @@ final class OrderResource extends JsonResource
             'grand_total'           => $this->grand_total,
             'balance_due'           => $this->balance_due,
             'notes'                 => $this->notes,
+            'rooms'                 => OrderRoomResource::collection($this->whenLoaded('rooms')),
             'created_at'            => $this->created_at?->toISOString(),
         ];
     }

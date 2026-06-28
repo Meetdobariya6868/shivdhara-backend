@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domain\Contracts\CustomerRepositoryInterface;
 use App\Domain\Contracts\OrderRepositoryInterface;
+use App\Domain\Contracts\ProductCatalogRepositoryInterface;
 use App\Domain\Contracts\UserRepositoryInterface;
 use App\Events\Auth\UserLoggedIn;
 use App\Events\Auth\UserLoggedOut;
+use App\Infrastructure\Persistence\Eloquent\Repositories\CustomerRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\OrderRepository;
+use App\Infrastructure\Persistence\Eloquent\Repositories\ProductCatalogRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\UserRepository;
 use App\Listeners\Auth\LogSuccessfulLogin;
 use App\Listeners\Auth\LogSuccessfulLogout;
@@ -25,6 +29,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
         $this->app->bind(OrderRepositoryInterface::class, OrderRepository::class);
+        $this->app->bind(CustomerRepositoryInterface::class, CustomerRepository::class);
+        $this->app->bind(ProductCatalogRepositoryInterface::class, ProductCatalogRepository::class);
     }
 
     public function boot(): void

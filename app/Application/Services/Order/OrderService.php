@@ -4,25 +4,41 @@ declare(strict_types=1);
 
 namespace App\Application\Services\Order;
 
+use App\Application\DTOs\Order\CreateOrderDTO;
 use App\Application\Services\BaseService;
+use App\Domain\Calculations\OrderItemCalculator;
+use App\Domain\Contracts\CustomerRepositoryInterface;
 use App\Domain\Contracts\OrderRepositoryInterface;
+use App\Domain\Contracts\ProductCatalogRepositoryInterface;
+use App\Domain\Enums\ItemType;
+use App\Domain\Enums\MeasurementUnit;
+use App\Models\Order;
 use App\Models\OrderCategory;
 use App\Models\OrderType;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
- * Business logic for the Orders module.
- * Only the listing/filtering capability is here for Phase 5 read layer.
- * Write operations (create/update/delete) will be added in a later phase.
+ * Business logic for the Orders module: listing (read) and creation (write).
+ *
+ * Order creation find-or-creates the customer and each item's catalogue
+ * product, recomputes every financial total server-side via OrderItemCalculator,
+ * and persists the whole graph atomically.
  */
 final class OrderService extends BaseService
 {
     public function __construct(
         private readonly OrderRepositoryInterface $orderRepository,
+        private readonly CustomerRepositoryInterface $customerRepository,
+        private readonly ProductCatalogRepositoryInterface $catalog,
+        private readonly OrderItemCalculator $calculator,
     ) {}
 
     /**
-     * @return Collection<int, \App\Models\Order>
+     * @return Collection<int, Order>
      */
     public function listOrders(): Collection
     {
@@ -49,5 +65,138 @@ final class OrderService extends BaseService
         $result = OrderType::where('is_active', true)->orderBy('name')->get();
 
         return $result;
+    }
+
+    /**
+     * Create a full order (customer + rooms + items) atomically.
+     * All totals are derived server-side; client-supplied amounts are ignored.
+     */
+    public function createOrder(CreateOrderDTO $dto, User $creator): Order
+    {
+        return DB::transaction(function () use ($dto, $creator): Order {
+            $customer = $this->customerRepository->findByContact(trim($dto->customerContact))
+                ?? $this->customerRepository->create([
+                    'name'          => trim($dto->customerName),
+                    'contact'       => trim($dto->customerContact),
+                    'created_by_id' => $creator->id,
+                ]);
+
+            $roomsData       = [];
+            $orderPurchase   = 0.0;
+            $orderSell       = 0.0;
+            $orderProfit     = 0.0;
+
+            foreach ($dto->rooms as $roomDto) {
+                $itemsData    = [];
+                $roomSqft     = 0.0;
+                $roomPurchase = 0.0;
+                $roomSell     = 0.0;
+                $roomProfit   = 0.0;
+
+                foreach ($roomDto->items as $index => $itemDto) {
+                    $type = ItemType::from($itemDto->itemType);
+                    $unit = MeasurementUnit::from($itemDto->measurementUnit);
+
+                    $variant = $this->catalog->resolveVariant(
+                        companyName: $itemDto->companyName,
+                        designName: $itemDto->designName,
+                        size: $itemDto->size,
+                        finish: $itemDto->finish,
+                        thickness: $itemDto->thickness,
+                        purchaseRate: $itemDto->purchaseRate,
+                        sellRate: $itemDto->sellRate,
+                    );
+
+                    $totals = $this->calculator->calculate(
+                        type: $type,
+                        piecesPerBox: $itemDto->piecesPerBox,
+                        numberOfBoxes: $itemDto->numberOfBoxes,
+                        numberOfPieces: $itemDto->numberOfPieces,
+                        unit: $unit,
+                        height: $itemDto->height,
+                        width: $itemDto->width,
+                        purchaseRate: $itemDto->purchaseRate,
+                        sellRate: $itemDto->sellRate,
+                    );
+
+                    $itemsData[] = [
+                        'design_variant_id'  => $variant->id,
+                        'product_image_path' => $itemDto->productImagePath,
+                        'item_type'          => $type->value,
+                        'pieces_per_box'     => $type === ItemType::Box ? $itemDto->piecesPerBox : null,
+                        'number_of_boxes'    => $type === ItemType::Box ? $itemDto->numberOfBoxes : null,
+                        'number_of_pieces'   => $type === ItemType::Piece ? $itemDto->numberOfPieces : null,
+                        'measurement_unit'   => $unit->value,
+                        'height'             => $itemDto->height,
+                        'width'              => $itemDto->width,
+                        'area_sqft'          => $totals['area_sqft'],
+                        'total_pieces'       => $totals['total_pieces'],
+                        'total_sqft'         => $totals['total_sqft'],
+                        'purchase_rate'      => $itemDto->purchaseRate,
+                        'sell_rate'          => $itemDto->sellRate,
+                        'purchase_amount'    => $totals['purchase_amount'],
+                        'sell_amount'        => $totals['sell_amount'],
+                        'profit'             => $totals['profit'],
+                        'sort_order'         => $index,
+                    ];
+
+                    $roomSqft     += $totals['total_sqft'];
+                    $roomPurchase += $totals['purchase_amount'];
+                    $roomSell     += $totals['sell_amount'];
+                    $roomProfit   += $totals['profit'];
+                }
+
+                $roomsData[] = [
+                    'room_name'      => $roomDto->roomName,
+                    'sort_order'     => $roomDto->sortOrder,
+                    'total_sqft'     => round($roomSqft, 4),
+                    'total_purchase' => round($roomPurchase, 2),
+                    'total_sell'     => round($roomSell, 2),
+                    'total_profit'   => round($roomProfit, 2),
+                    'items'          => $itemsData,
+                ];
+
+                $orderPurchase += $roomPurchase;
+                $orderSell     += $roomSell;
+                $orderProfit   += $roomProfit;
+            }
+
+            $grandTotal = round($orderSell + $dto->transportationCharge, 2);
+            $balanceDue = round($grandTotal - $dto->advancePayment, 2);
+
+            return $this->orderRepository->createGraph(
+                orderAttributes: [
+                    'order_date'            => now()->toDateString(),
+                    'customer_id'           => $customer->id,
+                    'order_category_id'     => $dto->orderCategoryId,
+                    'order_type_id'         => $dto->orderTypeId,
+                    'creator_id'            => $creator->id,
+                    'advance_payment'       => $dto->advancePayment,
+                    'transportation_charge' => $dto->transportationCharge,
+                    'notes'                 => $dto->notes,
+                    'total_purchase_amount' => round($orderPurchase, 2),
+                    'total_sell_amount'     => round($orderSell, 2),
+                    'total_profit'          => round($orderProfit, 2),
+                    'grand_total'           => $grandTotal,
+                    'balance_due'           => $balanceDue,
+                ],
+                roomsData: $roomsData,
+            );
+        });
+    }
+
+    /**
+     * Store an uploaded order-item image on the public disk.
+     *
+     * @return array{path: string, url: string}
+     */
+    public function storeItemImage(UploadedFile $image): array
+    {
+        $path = $image->store('order-items', 'public');
+
+        return [
+            'path' => $path,
+            'url'  => Storage::disk('public')->url($path),
+        ];
     }
 }

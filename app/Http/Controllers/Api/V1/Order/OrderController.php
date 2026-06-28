@@ -4,18 +4,22 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Order;
 
+use App\Application\DTOs\Order\CreateOrderDTO;
 use App\Application\Services\Order\OrderService;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Order\StoreOrderRequest;
+use App\Http\Requests\Api\V1\Order\UploadOrderItemImageRequest;
 use App\Http\Resources\Api\V1\Order\OrderCategoryResource;
 use App\Http\Resources\Api\V1\Order\OrderResource;
 use App\Http\Resources\Api\V1\Order\OrderTypeResource;
 use App\Models\Order;
 use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Read-only Order endpoints for the admin Orders screen.
- * Write operations (create, update, delete) will be added when the
- * Create Order flow is built (Phase 5 write layer).
+ * Order endpoints for the admin Orders screen and the shared Create Order flow.
+ * Thin orchestration only — business logic lives in OrderService, authorization
+ * in OrderPolicy.
  */
 final class OrderController extends Controller
 {
@@ -34,6 +38,38 @@ final class OrderController extends Controller
         return $this->success(
             data: OrderResource::collection($this->orderService->listOrders()),
             message: 'Orders retrieved.',
+        );
+    }
+
+    /**
+     * POST /orders — create a full order (customer + rooms + items).
+     * Shared by admin and salesman; authorization via OrderPolicy@create
+     * (enforced in StoreOrderRequest).
+     */
+    public function store(StoreOrderRequest $request): JsonResponse
+    {
+        $order = $this->orderService->createOrder(
+            CreateOrderDTO::fromArray($request->validated()),
+            $request->user(),
+        );
+
+        return $this->success(
+            data: OrderResource::make($order),
+            message: 'Order created successfully.',
+            status: Response::HTTP_CREATED,
+        );
+    }
+
+    /**
+     * POST /order-item-images — upload a single product photo, returning its
+     * stored path + public URL for inclusion in the order payload.
+     */
+    public function uploadItemImage(UploadOrderItemImageRequest $request): JsonResponse
+    {
+        return $this->success(
+            data: $this->orderService->storeItemImage($request->file('image')),
+            message: 'Image uploaded.',
+            status: Response::HTTP_CREATED,
         );
     }
 
