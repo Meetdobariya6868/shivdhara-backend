@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -25,6 +26,7 @@ class Order extends Model
         'notes',
         'architect_name',
         'grand_total',
+        'status',
         'updated_by_id',
     ];
 
@@ -35,6 +37,7 @@ class Order extends Model
             'advance_payment'       => 'decimal:2',
             'transportation_charge' => 'decimal:2',
             'grand_total'           => 'decimal:2',
+            'status'                => OrderStatus::class,
         ];
     }
 

@@ -11,11 +11,15 @@ use App\Domain\Contracts\OrderRepositoryInterface;
 use App\Domain\Contracts\ProductCatalogRepositoryInterface;
 use App\Domain\Enums\ItemType;
 use App\Domain\Enums\MeasurementUnit;
+use App\Domain\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\OrderCategory;
+use App\Models\OrderItem;
+use App\Models\OrderRoom;
 use App\Models\OrderType;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -64,6 +68,28 @@ final class OrderService extends BaseService
         $result = OrderType::where('is_active', true)->orderBy('name')->get();
 
         return $result;
+    }
+
+    /**
+     * Every order created by a salesman, newest-first (for the salesman detail
+     * screen).
+     *
+     * @return Collection<int, Order>
+     */
+    public function listOrdersForSalesman(int $userId): Collection
+    {
+        return $this->orderRepository->listByCreator($userId);
+    }
+
+    /**
+     * A single order with its full room/item graph for the detail screen.
+     *
+     * @throws ModelNotFoundException when the order does not exist.
+     */
+    public function getOrderDetail(int $id): Order
+    {
+        return $this->orderRepository->findDetail($id)
+            ?? throw (new ModelNotFoundException())->setModel(Order::class, [$id]);
     }
 
     /**
@@ -158,6 +184,30 @@ final class OrderService extends BaseService
                 roomsData: $roomsData,
             );
         });
+    }
+
+    /** Transition an order to a new workflow status. */
+    public function updateStatus(Order $order, OrderStatus $status): Order
+    {
+        return $this->orderRepository->updateStatus($order, $status);
+    }
+
+    /** Soft-delete an order (the graph cascades via the rooms/items relations). */
+    public function deleteOrder(Order $order): void
+    {
+        $this->orderRepository->delete($order->id);
+    }
+
+    /** Rename a room within an order. */
+    public function renameRoom(OrderRoom $room, string $roomName): Order
+    {
+        return $this->orderRepository->renameRoom($room, trim($roomName));
+    }
+
+    /** Move an item to another room belonging to the same order. */
+    public function moveItem(OrderItem $item, int $targetRoomId): Order
+    {
+        return $this->orderRepository->moveItem($item, $targetRoomId);
     }
 
     /**

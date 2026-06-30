@@ -73,6 +73,8 @@ final class UserController extends Controller
     {
         $this->authorize('view', User::class);
 
+        $user->loadCount('orders');
+
         return $this->success(
             data: UserResource::make($user),
             message: 'Salesman retrieved.',

@@ -30,4 +30,19 @@ final class OrderPolicy
     {
         return $user->isAdmin() || $user->can_create_orders;
     }
+
+    /**
+     * Admins can edit any order; salesmen only their own. Covers status changes,
+     * room renames and moving items between rooms.
+     */
+    public function update(User $user, Order $order): bool
+    {
+        return $user->isAdmin() || $order->creator_id === $user->id;
+    }
+
+    /** Admins can delete any order; salesmen only their own. */
+    public function delete(User $user, Order $order): bool
+    {
+        return $user->isAdmin() || $order->creator_id === $user->id;
+    }
 }

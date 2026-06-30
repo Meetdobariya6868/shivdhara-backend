@@ -25,6 +25,8 @@ final class UserResource extends JsonResource
             'status_label'      => $this->status->label(),
             'can_create_orders' => $this->can_create_orders,
             'is_admin'          => $this->isAdmin(),
+            // Present only when the orders relation count was loaded (user detail).
+            'orders_count'      => $this->whenCounted('orders'),
             'created_at'        => $this->created_at?->toISOString(),
         ];
     }

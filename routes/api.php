@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Catalog\DesignVariantController;
 use App\Http\Controllers\Api\V1\Order\OrderController;
+use App\Http\Controllers\Api\V1\Order\OrderItemController;
+use App\Http\Controllers\Api\V1\Order\OrderRoomController;
 use App\Http\Controllers\Api\V1\User\UserController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Route;
@@ -64,6 +66,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::patch('/users/{user}/status', [UserController::class, 'updateStatus'])->name('users.status');
         Route::patch('/users/{user}/password', [UserController::class, 'updatePassword'])->name('users.password');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+
+        // A salesman's own orders (admin, or the salesman viewing themselves).
+        Route::get('/users/{user}/orders', [OrderController::class, 'byUser'])->name('users.orders');
     });
 
     /*
@@ -75,9 +80,18 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         // Admin-only list (authorization enforced via OrderPolicy)
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
 
+        // Single order detail (admin, or the salesman who created it — OrderPolicy@view)
+        Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+
         // Create order — shared by admin + salesman (authorization via OrderPolicy@create)
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
         Route::post('/order-item-images', [OrderController::class, 'uploadItemImage'])->name('orders.item-images.store');
+
+        // Order mutations (authorization via OrderPolicy@update / @delete)
+        Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
+        Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
+        Route::patch('/order-rooms/{orderRoom}', [OrderRoomController::class, 'update'])->name('order-rooms.update');
+        Route::patch('/order-items/{orderItem}/move', [OrderItemController::class, 'move'])->name('order-items.move');
 
         // Reference data — available to all authenticated users (needed for create order)
         Route::get('/order-categories', [OrderController::class, 'categories'])->name('orders.categories');

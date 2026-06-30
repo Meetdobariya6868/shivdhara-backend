@@ -6,14 +6,18 @@ namespace App\Http\Controllers\Api\V1\Order;
 
 use App\Application\DTOs\Order\CreateOrderDTO;
 use App\Application\Services\Order\OrderService;
+use App\Domain\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Order\StoreOrderRequest;
+use App\Http\Requests\Api\V1\Order\UpdateOrderStatusRequest;
 use App\Http\Requests\Api\V1\Order\UploadOrderItemImageRequest;
 use App\Http\Resources\Api\V1\Order\OrderCategoryResource;
 use App\Http\Resources\Api\V1\Order\OrderResource;
 use App\Http\Resources\Api\V1\Order\OrderTypeResource;
 use App\Models\Order;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -38,6 +42,37 @@ final class OrderController extends Controller
         return $this->success(
             data: OrderResource::collection($this->orderService->listOrders()),
             message: 'Orders retrieved.',
+        );
+    }
+
+    /**
+     * GET /users/{user}/orders — orders created by a salesman (admin, or the
+     * salesman viewing their own). Powers the salesman detail screen.
+     */
+    public function byUser(Request $request, User $user): JsonResponse
+    {
+        abort_unless(
+            $request->user()->isAdmin() || $request->user()->id === $user->id,
+            Response::HTTP_FORBIDDEN,
+        );
+
+        return $this->success(
+            data: OrderResource::collection($this->orderService->listOrdersForSalesman($user->id)),
+            message: 'Salesman orders retrieved.',
+        );
+    }
+
+    /**
+     * GET /orders/{order} — full order detail (header + rooms + items).
+     * Admins see any order; salesmen only their own (OrderPolicy@view).
+     */
+    public function show(Order $order): JsonResponse
+    {
+        $this->authorize('view', $order);
+
+        return $this->success(
+            data: OrderResource::make($this->orderService->getOrderDetail($order->id)),
+            message: 'Order retrieved.',
         );
     }
 
@@ -94,5 +129,35 @@ final class OrderController extends Controller
             data: OrderTypeResource::collection($this->orderService->listTypes()),
             message: 'Order types retrieved.',
         );
+    }
+
+    /**
+     * PATCH /orders/{order}/status — change workflow status (e.g. confirm).
+     * Authorization via OrderPolicy@update (enforced in UpdateOrderStatusRequest).
+     */
+    public function updateStatus(UpdateOrderStatusRequest $request, Order $order): JsonResponse
+    {
+        $updated = $this->orderService->updateStatus(
+            $order,
+            OrderStatus::from($request->validated('status')),
+        );
+
+        return $this->success(
+            data: OrderResource::make($updated),
+            message: 'Order status updated.',
+        );
+    }
+
+    /**
+     * DELETE /orders/{order} — soft-delete an order.
+     * Admins delete any order; salesmen only their own (OrderPolicy@delete).
+     */
+    public function destroy(Order $order): JsonResponse
+    {
+        $this->authorize('delete', $order);
+
+        $this->orderService->deleteOrder($order);
+
+        return $this->message('Order deleted successfully.');
     }
 }
