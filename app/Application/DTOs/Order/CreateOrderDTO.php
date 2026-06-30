@@ -21,6 +21,8 @@ final class CreateOrderDTO extends BaseDTO
         public readonly float $advancePayment,
         public readonly float $transportationCharge,
         public readonly ?string $notes,
+        /** Only meaningful when the order type is "Architect"; null otherwise. */
+        public readonly ?string $architectName,
         public readonly array $rooms,
     ) {}
 
@@ -38,6 +40,7 @@ final class CreateOrderDTO extends BaseDTO
             advancePayment: (float) ($data['advance_payment'] ?? 0),
             transportationCharge: (float) ($data['transportation_charge'] ?? 0),
             notes: isset($data['notes']) ? (string) $data['notes'] : null,
+            architectName: isset($data['architect_name']) ? (string) $data['architect_name'] : null,
             rooms: array_map(
                 static fn (array $room): CreateOrderRoomDTO => CreateOrderRoomDTO::fromArray($room),
                 $rawRooms,
@@ -56,6 +59,7 @@ final class CreateOrderDTO extends BaseDTO
             'advance_payment'       => $this->advancePayment,
             'transportation_charge' => $this->transportationCharge,
             'notes'                 => $this->notes,
+            'architect_name'        => $this->architectName,
             'rooms'                 => array_map(
                 static fn (CreateOrderRoomDTO $room): array => $room->toArray(),
                 $this->rooms,

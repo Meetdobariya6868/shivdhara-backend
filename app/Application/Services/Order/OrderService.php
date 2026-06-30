@@ -73,6 +73,15 @@ final class OrderService extends BaseService
     public function createOrder(CreateOrderDTO $dto, User $creator): Order
     {
         return DB::transaction(function () use ($dto, $creator): Order {
+            // Architect name is kept only for "Architect"-type orders; for any
+            // other type it is forced to null so stray client input is dropped.
+            $isArchitectType = OrderType::whereKey($dto->orderTypeId)
+                ->whereRaw('LOWER(name) = ?', ['architect'])
+                ->exists();
+            $architectName = $isArchitectType && $dto->architectName !== null && trim($dto->architectName) !== ''
+                ? trim($dto->architectName)
+                : null;
+
             $customer = $this->customerRepository->findByContact(trim($dto->customerContact))
                 ?? $this->customerRepository->create([
                     'name'          => trim($dto->customerName),
@@ -143,6 +152,7 @@ final class OrderService extends BaseService
                     'advance_payment'       => $dto->advancePayment,
                     'transportation_charge' => $dto->transportationCharge,
                     'notes'                 => $dto->notes,
+                    'architect_name'        => $architectName,
                     'grand_total'           => $grandTotal,
                 ],
                 roomsData: $roomsData,

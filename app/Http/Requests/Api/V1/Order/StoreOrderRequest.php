@@ -7,6 +7,8 @@ namespace App\Http\Requests\Api\V1\Order;
 use App\Domain\Enums\ItemType;
 use App\Domain\Enums\MeasurementUnit;
 use App\Models\Order;
+use App\Models\OrderType;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -36,6 +38,10 @@ final class StoreOrderRequest extends FormRequest
             'advance_payment'       => ['required', 'numeric', 'min:0'],
             'transportation_charge' => ['required', 'numeric', 'min:0'],
             'notes'                 => ['nullable', 'string', 'max:2000'],
+
+            // Required only for "Architect" order types (enforced in withValidator,
+            // since the type is identified by name rather than a fixed id).
+            'architect_name'        => ['nullable', 'string', 'max:120'],
 
             'rooms'                 => ['required', 'array', 'min:1'],
             'rooms.*.room_name'     => ['required', 'string', 'max:80'],
@@ -80,5 +86,35 @@ final class StoreOrderRequest extends FormRequest
             'rooms.*.items.*.number_of_boxes.required_if'  => 'Number of boxes is required for box items.',
             'rooms.*.items.*.number_of_pieces.required_if' => 'Number of pieces is required for piece items.',
         ];
+    }
+
+    /**
+     * Architect orders must carry an architect name. The "Architect" type is
+     * matched by name (case-insensitively) because order types have no stable
+     * slug/code — only a unique name.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $typeId = $this->input('order_type_id');
+
+            if ($typeId === null || ! $this->orderTypeIsArchitect((int) $typeId)) {
+                return;
+            }
+
+            if (trim((string) $this->input('architect_name')) === '') {
+                $validator->errors()->add(
+                    'architect_name',
+                    'Architect name is required for architect orders.',
+                );
+            }
+        });
+    }
+
+    private function orderTypeIsArchitect(int $orderTypeId): bool
+    {
+        return OrderType::whereKey($orderTypeId)
+            ->whereRaw('LOWER(name) = ?', ['architect'])
+            ->exists();
     }
 }

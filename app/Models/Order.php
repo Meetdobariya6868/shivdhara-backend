@@ -23,6 +23,7 @@ class Order extends Model
         'advance_payment',
         'transportation_charge',
         'notes',
+        'architect_name',
         'grand_total',
         'updated_by_id',
     ];

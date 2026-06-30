@@ -39,6 +39,7 @@ final class OrderResource extends JsonResource
             'transportation_charge' => $this->transportation_charge,
             'grand_total'           => $this->grand_total,
             'notes'                 => $this->notes,
+            'architect_name'        => $this->architect_name,
             'rooms'                 => OrderRoomResource::collection($this->whenLoaded('rooms')),
             'created_at'            => $this->created_at?->toISOString(),
         ];
