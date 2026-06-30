@@ -24,6 +24,13 @@ use Illuminate\Support\Str;
  */
 class ProductCatalogRepository implements ProductCatalogRepositoryInterface
 {
+    public function findVariant(int $id): ?DesignVariant
+    {
+        return DesignVariant::query()
+            ->where('is_active', true)
+            ->find($id);
+    }
+
     public function resolveVariant(
         string $companyName,
         string $designName,

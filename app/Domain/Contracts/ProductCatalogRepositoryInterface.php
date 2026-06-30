@@ -16,6 +16,14 @@ use App\Models\DesignVariant;
 interface ProductCatalogRepositoryInterface
 {
     /**
+     * Fetch an existing active variant by id, or null if missing/inactive.
+     * Used when the client selected a row from the autocomplete and sent its
+     * design_variant_id — links the order item to that exact variant with no
+     * risk of creating a near-duplicate.
+     */
+    public function findVariant(int $id): ?DesignVariant;
+
+    /**
      * Resolve (find or create) the design variant identified by the given free-text
      * product attributes. New variants are seeded with the supplied default rates.
      */

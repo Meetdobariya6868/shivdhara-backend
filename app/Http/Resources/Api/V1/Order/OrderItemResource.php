@@ -39,9 +39,6 @@ final class OrderItemResource extends JsonResource
             'height'           => $this->height,
             'width'            => $this->width,
             'sqft_rate'        => $this->sqft_rate,
-            'total_pieces'     => $this->total_pieces,
-            'purchase_amount'  => $this->purchase_amount,
-            'sell_amount'      => $this->sell_amount,
             'product_total'    => $this->product_total,
         ];
     }

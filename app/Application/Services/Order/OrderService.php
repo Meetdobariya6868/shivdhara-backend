@@ -6,7 +6,6 @@ namespace App\Application\Services\Order;
 
 use App\Application\DTOs\Order\CreateOrderDTO;
 use App\Application\Services\BaseService;
-use App\Domain\Calculations\OrderItemCalculator;
 use App\Domain\Contracts\CustomerRepositoryInterface;
 use App\Domain\Contracts\OrderRepositoryInterface;
 use App\Domain\Contracts\ProductCatalogRepositoryInterface;
@@ -25,8 +24,9 @@ use Illuminate\Support\Facades\Storage;
  * Business logic for the Orders module: listing (read) and creation (write).
  *
  * Order creation find-or-creates the customer and each item's catalogue
- * product, recomputes every financial total server-side via OrderItemCalculator,
- * and persists the whole graph atomically.
+ * product, then persists the whole graph atomically. The line total
+ * (product_total) is supplied per item and the order grand_total is summed
+ * from those plus transportation.
  */
 final class OrderService extends BaseService
 {
@@ -34,7 +34,6 @@ final class OrderService extends BaseService
         private readonly OrderRepositoryInterface $orderRepository,
         private readonly CustomerRepositoryInterface $customerRepository,
         private readonly ProductCatalogRepositoryInterface $catalog,
-        private readonly OrderItemCalculator $calculator,
     ) {}
 
     /**
@@ -91,27 +90,21 @@ final class OrderService extends BaseService
                     $type = ItemType::from($itemDto->itemType);
                     $unit = MeasurementUnit::from($itemDto->measurementUnit);
 
-                    $variant = $this->catalog->resolveVariant(
-                        companyName: $itemDto->companyName,
-                        designName: $itemDto->designName,
-                        size: $itemDto->size,
-                        finish: $itemDto->finish,
-                        thickness: $itemDto->thickness,
-                        purchaseRate: $itemDto->purchaseRate,
-                        sellRate: $itemDto->sellRate,
-                    );
-
-                    $totals = $this->calculator->calculate(
-                        type: $type,
-                        piecesPerBox: $itemDto->piecesPerBox,
-                        numberOfBoxes: $itemDto->numberOfBoxes,
-                        numberOfPieces: $itemDto->numberOfPieces,
-                        unit: $unit,
-                        height: $itemDto->height,
-                        width: $itemDto->width,
-                        purchaseRate: $itemDto->purchaseRate,
-                        sellRate: $itemDto->sellRate,
-                    );
+                    // Selected from the autocomplete → link to that exact
+                    // variant (no duplicate catalogue rows). Typed-in product
+                    // (or a stale/inactive id) → find-or-create by free text.
+                    $variant = ($itemDto->designVariantId !== null
+                        ? $this->catalog->findVariant($itemDto->designVariantId)
+                        : null)
+                        ?? $this->catalog->resolveVariant(
+                            companyName: $itemDto->companyName,
+                            designName: $itemDto->designName,
+                            size: $itemDto->size,
+                            finish: $itemDto->finish,
+                            thickness: $itemDto->thickness,
+                            purchaseRate: $itemDto->purchaseRate,
+                            sellRate: $itemDto->sellRate,
+                        );
 
                     $itemsData[] = [
                         'design_variant_id'  => $variant->id,
@@ -124,9 +117,6 @@ final class OrderService extends BaseService
                         'height'             => $itemDto->height,
                         'width'              => $itemDto->width,
                         'sqft_rate'          => $itemDto->sellRate,
-                        'total_pieces'       => $totals['total_pieces'],
-                        'purchase_amount'    => $totals['purchase_amount'],
-                        'sell_amount'        => $totals['sell_amount'],
                         'product_total'      => $itemDto->productTotal,
                         'sort_order'         => $index,
                     ];

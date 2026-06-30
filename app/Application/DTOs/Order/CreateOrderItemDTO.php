@@ -11,6 +11,11 @@ use App\Application\DTOs\BaseDTO;
  * "Add Detail" popup. Product attributes (company/design/size/finish/thickness)
  * are free text — the service find-or-creates the matching catalogue records.
  *
+ * When the user picked a row from the autocomplete, $designVariantId carries
+ * that exact variant id so the service can link to it directly (no duplicate
+ * catalogue rows). It is null when the user typed a brand-new product, in which
+ * case the service falls back to the free-text find-or-create.
+ *
  * Purchase/sell amounts are recomputed server-side from these inputs. The
  * line's product_total is supplied here because it is user-editable in the
  * "Add Detail" popup (auto-filled from the formula, but overridable).
@@ -18,6 +23,7 @@ use App\Application\DTOs\BaseDTO;
 final class CreateOrderItemDTO extends BaseDTO
 {
     public function __construct(
+        public readonly ?int $designVariantId,
         public readonly string $companyName,
         public readonly string $designName,
         public readonly string $size,
@@ -40,6 +46,7 @@ final class CreateOrderItemDTO extends BaseDTO
     public static function fromArray(array $data): static
     {
         return new self(
+            designVariantId: isset($data['design_variant_id']) ? (int) $data['design_variant_id'] : null,
             companyName: (string) $data['company_name'],
             designName: (string) $data['design_name'],
             size: (string) $data['size'],
@@ -63,6 +70,7 @@ final class CreateOrderItemDTO extends BaseDTO
     public function toArray(): array
     {
         return [
+            'design_variant_id'  => $this->designVariantId,
             'company_name'       => $this->companyName,
             'design_name'        => $this->designName,
             'size'               => $this->size,

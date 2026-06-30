@@ -69,10 +69,7 @@ class OrderSeeder extends Seeder
                 'height'            => 24.000,
                 'width'             => 24.000,
                 'sqft_rate'         => 52.00,
-                'total_pieces'      => 40,
-                'purchase_amount'   => 6080.00,
-                'sell_amount'       => 8320.00,
-                'product_total'        => 8320.00,
+                'product_total'     => 8320.00,
                 'sort_order'        => 0,
             ]);
 
@@ -91,10 +88,7 @@ class OrderSeeder extends Seeder
                 'height'            => 32.000,
                 'width'             => 32.000,
                 'sqft_rate'         => 58.00,
-                'total_pieces'      => 16,
-                'purchase_amount'   => 4778.67,
-                'sell_amount'       => 6599.11,
-                'product_total'        => 6599.11,
+                'product_total'     => 6599.11,
                 'sort_order'        => 0,
             ]);
         });
@@ -132,10 +126,7 @@ class OrderSeeder extends Seeder
                 'height'            => 24.000,
                 'width'             => 48.000,
                 'sqft_rate'         => 88.00,
-                'total_pieces'      => 24,
-                'purchase_amount'   => 12480.00,
-                'sell_amount'       => 16896.00,
-                'product_total'        => 16896.00,
+                'product_total'     => 16896.00,
                 'sort_order'        => 0,
             ]);
         });
@@ -171,10 +162,7 @@ class OrderSeeder extends Seeder
                 'height'            => 12.000,
                 'width'             => 12.000,
                 'sqft_rate'         => 26.00,
-                'total_pieces'      => 60,
-                'purchase_amount'   => 1080.00,
-                'sell_amount'       => 1560.00,
-                'product_total'        => 1560.00,
+                'product_total'     => 1560.00,
                 'sort_order'        => 0,
             ]);
         });

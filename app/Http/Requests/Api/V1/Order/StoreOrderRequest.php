@@ -42,6 +42,10 @@ final class StoreOrderRequest extends FormRequest
             'rooms.*.sort_order'    => ['required', 'integer', 'min:0'],
             'rooms.*.items'         => ['required', 'array', 'min:1'],
 
+            // Set when the user picked a row from the catalogue autocomplete;
+            // links the item to that exact variant. Absent for typed-in products.
+            'rooms.*.items.*.design_variant_id'  => ['nullable', 'integer', Rule::exists('design_variants', 'id')->where('is_active', true)],
+
             'rooms.*.items.*.company_name'       => ['required', 'string', 'max:120'],
             'rooms.*.items.*.design_name'        => ['required', 'string', 'max:120'],
             'rooms.*.items.*.size'               => ['required', 'string', 'max:40'],

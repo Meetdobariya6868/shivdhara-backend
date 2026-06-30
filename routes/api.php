@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\Catalog\DesignVariantController;
 use App\Http\Controllers\Api\V1\Order\OrderController;
 use App\Http\Controllers\Api\V1\User\UserController;
 use Illuminate\Http\JsonResponse;
@@ -81,6 +82,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         // Reference data — available to all authenticated users (needed for create order)
         Route::get('/order-categories', [OrderController::class, 'categories'])->name('orders.categories');
         Route::get('/order-types', [OrderController::class, 'types'])->name('orders.types');
+
+        // Catalogue autocomplete for the Add-Item modal (FULLTEXT-backed search).
+        Route::get('/design-variants/search', [DesignVariantController::class, 'search'])->name('design-variants.search');
     });
 
 });

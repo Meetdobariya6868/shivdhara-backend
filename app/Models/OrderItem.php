@@ -26,9 +26,6 @@ class OrderItem extends Model
         'height',
         'width',
         'sqft_rate',
-        'total_pieces',
-        'purchase_amount',
-        'sell_amount',
         'product_total',
         'sort_order',
     ];
@@ -41,14 +38,11 @@ class OrderItem extends Model
             'pieces_per_box'  => 'integer',
             'number_of_boxes' => 'integer',
             'number_of_pieces'=> 'integer',
-            'total_pieces'    => 'integer',
             'sort_order'      => 'integer',
             'height'          => 'decimal:3',
             'width'           => 'decimal:3',
             'sqft_rate'       => 'decimal:2',
-            'purchase_amount' => 'decimal:2',
-            'sell_amount'     => 'decimal:2',
-            'product_total'      => 'decimal:2',
+            'product_total'   => 'decimal:2',
         ];
     }
 

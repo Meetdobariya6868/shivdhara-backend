@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Domain\Contracts\CustomerRepositoryInterface;
+use App\Domain\Contracts\DesignVariantRepositoryInterface;
 use App\Domain\Contracts\OrderRepositoryInterface;
 use App\Domain\Contracts\UserRepositoryInterface;
 use App\Infrastructure\Persistence\Eloquent\Repositories\CustomerRepository;
+use App\Infrastructure\Persistence\Eloquent\Repositories\DesignVariantRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\OrderRepository;
 use App\Infrastructure\Persistence\Eloquent\Repositories\UserRepository;
 use Illuminate\Support\ServiceProvider;
@@ -32,6 +34,7 @@ class RepositoryServiceProvider extends ServiceProvider
         UserRepositoryInterface::class => UserRepository::class,
         CustomerRepositoryInterface::class => CustomerRepository::class,
         OrderRepositoryInterface::class => OrderRepository::class,
+        DesignVariantRepositoryInterface::class => DesignVariantRepository::class,
     ];
 
     /**
