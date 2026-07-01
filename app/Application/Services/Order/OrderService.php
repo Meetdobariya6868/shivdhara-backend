@@ -175,6 +175,7 @@ final class OrderService extends BaseService
                     'order_category_id'     => $dto->orderCategoryId,
                     'order_type_id'         => $dto->orderTypeId,
                     'creator_id'            => $creator->id,
+                    'status'                => OrderStatus::Pending,
                     'advance_payment'       => $dto->advancePayment,
                     'transportation_charge' => $dto->transportationCharge,
                     'notes'                 => $dto->notes,
@@ -208,6 +209,26 @@ final class OrderService extends BaseService
     public function moveItem(OrderItem $item, int $targetRoomId): Order
     {
         return $this->orderRepository->moveItem($item, $targetRoomId);
+    }
+
+    /**
+     * Update mutable item fields (quantities, dimensions, rate, image).
+     * The grand_total of the parent order is recomputed automatically.
+     *
+     * @param  array<string, mixed>  $data  Validated payload from UpdateOrderItemRequest.
+     */
+    public function updateItem(OrderItem $item, array $data): Order
+    {
+        return $this->orderRepository->updateItem($item, $data);
+    }
+
+    /**
+     * Soft-delete an item. The grand_total of the parent order is recomputed.
+     * Returns the updated order detail so the caller can return it to the client.
+     */
+    public function deleteItem(OrderItem $item): Order
+    {
+        return $this->orderRepository->deleteItem($item);
     }
 
     /**

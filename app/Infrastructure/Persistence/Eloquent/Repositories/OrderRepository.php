@@ -140,4 +140,57 @@ class OrderRepository extends BaseRepository implements OrderRepositoryInterface
 
         return $detail;
     }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    public function updateItem(OrderItem $item, array $attributes): Order
+    {
+        $orderId = $item->room->order_id;
+
+        $item->fill($attributes)->save();
+        $this->recalcOrderTotal($orderId);
+
+        /** @var Order $detail */
+        $detail = $this->findDetail($orderId);
+
+        return $detail;
+    }
+
+    public function deleteItem(OrderItem $item): Order
+    {
+        // Capture the order id before soft-deleting (relation becomes inaccessible).
+        $orderId = $item->room->order_id;
+
+        $item->delete();
+        $this->recalcOrderTotal($orderId);
+
+        /** @var Order $detail */
+        $detail = $this->findDetail($orderId);
+
+        return $detail;
+    }
+
+    /**
+     * Recompute grand_total from the sum of all non-deleted item totals plus
+     * transportation_charge. Called after any item mutation that changes value.
+     */
+    private function recalcOrderTotal(int $orderId): void
+    {
+        /** @var Order|null $order */
+        $order = $this->model->newQuery()
+            ->with('rooms.items')
+            ->find($orderId);
+
+        if ($order === null) {
+            return;
+        }
+
+        $productTotal = $order->rooms
+            ->flatMap(fn ($room) => $room->items)
+            ->sum('product_total');
+
+        $order->grand_total = round((float) $productTotal + (float) $order->transportation_charge, 2);
+        $order->save();
+    }
 }

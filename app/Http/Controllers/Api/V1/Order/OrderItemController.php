@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1\Order;
 use App\Application\Services\Order\OrderService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Order\MoveOrderItemRequest;
+use App\Http\Requests\Api\V1\Order\UpdateOrderItemRequest;
 use App\Http\Resources\Api\V1\Order\OrderResource;
 use App\Models\OrderItem;
 use Illuminate\Http\JsonResponse;
@@ -22,6 +23,20 @@ final class OrderItemController extends Controller
     ) {}
 
     /**
+     * PATCH /order-items/{orderItem} — update mutable item fields (quantities,
+     * dimensions, rate, image). Returns the reloaded parent order detail.
+     */
+    public function update(UpdateOrderItemRequest $request, OrderItem $orderItem): JsonResponse
+    {
+        $order = $this->orderService->updateItem($orderItem, $request->validated());
+
+        return $this->success(
+            data: OrderResource::make($order),
+            message: 'Item updated.',
+        );
+    }
+
+    /**
      * PATCH /order-items/{orderItem}/move — move an item to another room of the
      * same order. Returns the reloaded parent order detail.
      */
@@ -32,6 +47,22 @@ final class OrderItemController extends Controller
         return $this->success(
             data: OrderResource::make($order),
             message: 'Item moved.',
+        );
+    }
+
+    /**
+     * DELETE /order-items/{orderItem} — soft-delete an item and recompute the
+     * parent order total. Returns the updated order detail for cache sync.
+     */
+    public function destroy(OrderItem $orderItem): JsonResponse
+    {
+        $this->authorize('update', $orderItem->room->order);
+
+        $order = $this->orderService->deleteItem($orderItem);
+
+        return $this->success(
+            data: OrderResource::make($order),
+            message: 'Item deleted.',
         );
     }
 }

@@ -91,6 +91,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
         Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
         Route::patch('/order-rooms/{orderRoom}', [OrderRoomController::class, 'update'])->name('order-rooms.update');
+        Route::patch('/order-items/{orderItem}', [OrderItemController::class, 'update'])->name('order-items.update');
+        Route::delete('/order-items/{orderItem}', [OrderItemController::class, 'destroy'])->name('order-items.destroy');
         Route::patch('/order-items/{orderItem}/move', [OrderItemController::class, 'move'])->name('order-items.move');
 
         // Reference data — available to all authenticated users (needed for create order)

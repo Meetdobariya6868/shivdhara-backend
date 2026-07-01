@@ -57,4 +57,18 @@ interface OrderRepositoryInterface extends RepositoryInterface
 
     /** Move an item to another room (same order) and return the reloaded order detail graph. */
     public function moveItem(OrderItem $item, int $targetRoomId): Order;
+
+    /**
+     * Overwrite mutable item fields and return the reloaded order detail graph.
+     * Also recomputes the parent order's grand_total.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function updateItem(OrderItem $item, array $attributes): Order;
+
+    /**
+     * Soft-delete an item and return the reloaded order detail graph.
+     * Also recomputes the parent order's grand_total.
+     */
+    public function deleteItem(OrderItem $item): Order;
 }
