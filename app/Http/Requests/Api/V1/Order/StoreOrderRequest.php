@@ -16,9 +16,9 @@ use Illuminate\Validation\Rule;
  * Validates creation of a full order graph (order → rooms → items).
  * Authorization is delegated to OrderPolicy@create.
  *
- * Conditional quantity fields mirror the DB CHECK constraint on order_items:
- *   box   → pieces_per_box + number_of_boxes required
- *   piece → number_of_pieces required
+ * Quantity is required for every item (boxes for box items, pieces for piece
+ * items). Pieces-per-box is required for box items only, mirroring the DB
+ * CHECK constraint on order_items.
  */
 final class StoreOrderRequest extends FormRequest
 {
@@ -65,14 +65,14 @@ final class StoreOrderRequest extends FormRequest
             'rooms.*.items.*.width'              => ['required', 'numeric', 'gt:0'],
             'rooms.*.items.*.purchase_rate'      => ['required', 'numeric', 'min:0'],
             'rooms.*.items.*.sell_rate'          => ['required', 'numeric', 'min:0'],
-            'rooms.*.items.*.product_total'      => ['required', 'numeric', 'min:0'],
+            // Per-item price (editable in the UI); product_total is derived server-side.
+            'rooms.*.items.*.price_per_item'     => ['required', 'numeric', 'min:0'],
 
-            // Box-only quantities
-            'rooms.*.items.*.pieces_per_box'  => ['nullable', 'required_if:rooms.*.items.*.item_type,box', 'integer', 'min:1'],
-            'rooms.*.items.*.number_of_boxes' => ['nullable', 'required_if:rooms.*.items.*.item_type,box', 'integer', 'min:1'],
+            // Quantity is required for both types (boxes for box items, pieces for piece items); 0 is allowed.
+            'rooms.*.items.*.quantity'        => ['required', 'integer', 'min:0'],
 
-            // Piece-only quantity
-            'rooms.*.items.*.number_of_pieces' => ['nullable', 'required_if:rooms.*.items.*.item_type,piece', 'integer', 'min:1'],
+            // Pieces-per-box applies to box items only (nulled server-side for pieces); 0 is allowed.
+            'rooms.*.items.*.pieces_per_box'  => ['nullable', 'required_if:rooms.*.items.*.item_type,box', 'integer', 'min:0'],
         ];
     }
 
@@ -82,9 +82,8 @@ final class StoreOrderRequest extends FormRequest
         return [
             'rooms.required'         => 'Add at least one room before saving the order.',
             'rooms.*.items.required' => 'Each room must contain at least one product.',
-            'rooms.*.items.*.pieces_per_box.required_if'   => 'Pieces per box is required for box items.',
-            'rooms.*.items.*.number_of_boxes.required_if'  => 'Number of boxes is required for box items.',
-            'rooms.*.items.*.number_of_pieces.required_if' => 'Number of pieces is required for piece items.',
+            'rooms.*.items.*.pieces_per_box.required_if' => 'Pieces per box is required for box items.',
+            'rooms.*.items.*.quantity.required'          => 'Quantity is required for every item.',
         ];
     }
 

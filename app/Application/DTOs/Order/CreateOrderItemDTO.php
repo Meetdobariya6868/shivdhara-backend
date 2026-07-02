@@ -16,9 +16,10 @@ use App\Application\DTOs\BaseDTO;
  * catalogue rows). It is null when the user typed a brand-new product, in which
  * case the service falls back to the free-text find-or-create.
  *
- * Purchase/sell amounts are recomputed server-side from these inputs. The
- * line's product_total is supplied here because it is user-editable in the
- * "Add Detail" popup (auto-filled from the formula, but overridable).
+ * The per-item price (price_per_item) is supplied here because it is
+ * user-editable in the "Add Detail" popup (auto-filled from area × sqft_rate,
+ * but overridable). The line total (product_total) is derived server-side as
+ * price_per_item × quantity (× pieces_per_box for box items).
  */
 final class CreateOrderItemDTO extends BaseDTO
 {
@@ -31,15 +32,14 @@ final class CreateOrderItemDTO extends BaseDTO
         public readonly string $thickness,
         public readonly ?string $productImagePath,
         public readonly string $itemType,         // 'box' | 'piece'
-        public readonly ?int $piecesPerBox,
-        public readonly ?int $numberOfBoxes,
-        public readonly ?int $numberOfPieces,
+        public readonly int $quantity,            // boxes (box) or pieces (piece)
+        public readonly ?int $piecesPerBox,       // box items only
         public readonly string $measurementUnit,  // 'mm' | 'inch' | 'feet'
         public readonly float $height,
         public readonly float $width,
         public readonly float $purchaseRate,
         public readonly float $sellRate,
-        public readonly float $productTotal,
+        public readonly float $pricePerItem,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -54,15 +54,14 @@ final class CreateOrderItemDTO extends BaseDTO
             thickness: (string) $data['thickness'],
             productImagePath: isset($data['product_image_path']) ? (string) $data['product_image_path'] : null,
             itemType: (string) $data['item_type'],
+            quantity: (int) $data['quantity'],
             piecesPerBox: isset($data['pieces_per_box']) ? (int) $data['pieces_per_box'] : null,
-            numberOfBoxes: isset($data['number_of_boxes']) ? (int) $data['number_of_boxes'] : null,
-            numberOfPieces: isset($data['number_of_pieces']) ? (int) $data['number_of_pieces'] : null,
             measurementUnit: (string) $data['measurement_unit'],
             height: (float) $data['height'],
             width: (float) $data['width'],
             purchaseRate: (float) $data['purchase_rate'],
             sellRate: (float) $data['sell_rate'],
-            productTotal: (float) $data['product_total'],
+            pricePerItem: (float) $data['price_per_item'],
         );
     }
 
@@ -78,15 +77,14 @@ final class CreateOrderItemDTO extends BaseDTO
             'thickness'          => $this->thickness,
             'product_image_path' => $this->productImagePath,
             'item_type'          => $this->itemType,
+            'quantity'           => $this->quantity,
             'pieces_per_box'     => $this->piecesPerBox,
-            'number_of_boxes'    => $this->numberOfBoxes,
-            'number_of_pieces'   => $this->numberOfPieces,
             'measurement_unit'   => $this->measurementUnit,
             'height'             => $this->height,
             'width'              => $this->width,
             'purchase_rate'      => $this->purchaseRate,
             'sell_rate'          => $this->sellRate,
-            'product_total'      => $this->productTotal,
+            'price_per_item'     => $this->pricePerItem,
         ];
     }
 }

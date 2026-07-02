@@ -32,14 +32,14 @@ final class OrderItemResource extends JsonResource
                 ? Storage::disk('public')->url($this->product_image_path)
                 : null,
             'item_type'          => $this->item_type->value,
+            'quantity'           => $this->quantity,
             'pieces_per_box'     => $this->pieces_per_box,
-            'number_of_boxes'    => $this->number_of_boxes,
-            'number_of_pieces'   => $this->number_of_pieces,
-            'measurement_unit' => $this->measurement_unit->value,
-            'height'           => $this->height,
-            'width'            => $this->width,
-            'sqft_rate'        => $this->sqft_rate,
-            'product_total'    => $this->product_total,
+            'measurement_unit'   => $this->measurement_unit->value,
+            'height'             => $this->height,
+            'width'              => $this->width,
+            'sqft_rate'          => $this->sqft_rate,
+            'price_per_item'     => $this->price_per_item,
+            'product_total'      => $this->product_total,
         ];
     }
 }

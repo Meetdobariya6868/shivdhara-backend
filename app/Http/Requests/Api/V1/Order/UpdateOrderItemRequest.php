@@ -38,12 +38,12 @@ final class UpdateOrderItemRequest extends FormRequest
             'height'           => ['required', 'numeric', 'gt:0'],
             'width'            => ['required', 'numeric', 'gt:0'],
             'sqft_rate'        => ['required', 'numeric', 'min:0'],
-            'product_total'    => ['required', 'numeric', 'min:0'],
+            // Per-item price (editable); product_total is derived server-side.
+            'price_per_item'   => ['required', 'numeric', 'min:0'],
 
-            // Conditional quantity fields — mirror the DB CHECK constraint.
-            'pieces_per_box'  => ['nullable', 'required_if:item_type,box',   'integer', 'min:1'],
-            'number_of_boxes' => ['nullable', 'required_if:item_type,box',   'integer', 'min:1'],
-            'number_of_pieces'=> ['nullable', 'required_if:item_type,piece', 'integer', 'min:1'],
+            // Quantity is required for both types; pieces-per-box for box items only. 0 is allowed.
+            'quantity'        => ['required', 'integer', 'min:0'],
+            'pieces_per_box'  => ['nullable', 'required_if:item_type,box', 'integer', 'min:0'],
         ];
     }
 
@@ -51,9 +51,8 @@ final class UpdateOrderItemRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'pieces_per_box.required_if'  => 'Pieces per box is required for box items.',
-            'number_of_boxes.required_if' => 'Number of boxes is required for box items.',
-            'number_of_pieces.required_if'=> 'Number of pieces is required for piece items.',
+            'pieces_per_box.required_if' => 'Pieces per box is required for box items.',
+            'quantity.required'          => 'Quantity is required.',
         ];
     }
 }

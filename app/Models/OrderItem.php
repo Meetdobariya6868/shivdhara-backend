@@ -19,13 +19,13 @@ class OrderItem extends Model
         'design_variant_id',
         'product_image_path',
         'item_type',
+        'quantity',
         'pieces_per_box',
-        'number_of_boxes',
-        'number_of_pieces',
         'measurement_unit',
         'height',
         'width',
         'sqft_rate',
+        'price_per_item',
         'product_total',
         'sort_order',
     ];
@@ -35,13 +35,13 @@ class OrderItem extends Model
         return [
             'item_type'       => ItemType::class,
             'measurement_unit'=> MeasurementUnit::class,
+            'quantity'        => 'integer',
             'pieces_per_box'  => 'integer',
-            'number_of_boxes' => 'integer',
-            'number_of_pieces'=> 'integer',
             'sort_order'      => 'integer',
             'height'          => 'decimal:3',
             'width'           => 'decimal:3',
             'sqft_rate'       => 'decimal:2',
+            'price_per_item'  => 'decimal:2',
             'product_total'   => 'decimal:2',
         ];
     }

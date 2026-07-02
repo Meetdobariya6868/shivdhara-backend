@@ -51,7 +51,7 @@ class OrderSeeder extends Seeder
                 'creator_id'            => $admin->id,
                 'advance_payment'       => 5000.00,
                 'transportation_charge' => 500.00,
-                'grand_total'           => 15419.24,
+                'grand_total'           => 15419.04,
             ]);
 
             $room1 = OrderRoom::create([
@@ -63,12 +63,13 @@ class OrderSeeder extends Seeder
             $room1->items()->create([
                 'design_variant_id' => $v1?->id,
                 'item_type'         => ItemType::Box->value,
+                'quantity'          => 10,
                 'pieces_per_box'    => 4,
-                'number_of_boxes'   => 10,
                 'measurement_unit'  => MeasurementUnit::Inch->value,
                 'height'            => 24.000,
                 'width'             => 24.000,
                 'sqft_rate'         => 52.00,
+                'price_per_item'    => 208.00,
                 'product_total'     => 8320.00,
                 'sort_order'        => 0,
             ]);
@@ -82,13 +83,14 @@ class OrderSeeder extends Seeder
             $room2->items()->create([
                 'design_variant_id' => $v2?->id,
                 'item_type'         => ItemType::Box->value,
+                'quantity'          => 8,
                 'pieces_per_box'    => 2,
-                'number_of_boxes'   => 8,
                 'measurement_unit'  => MeasurementUnit::Inch->value,
                 'height'            => 32.000,
                 'width'             => 32.000,
                 'sqft_rate'         => 58.00,
-                'product_total'     => 6599.11,
+                'price_per_item'    => 412.44,
+                'product_total'     => 6599.04,
                 'sort_order'        => 0,
             ]);
         });
@@ -120,12 +122,13 @@ class OrderSeeder extends Seeder
             $room->items()->create([
                 'design_variant_id' => $v3?->id,
                 'item_type'         => ItemType::Box->value,
+                'quantity'          => 12,
                 'pieces_per_box'    => 2,
-                'number_of_boxes'   => 12,
                 'measurement_unit'  => MeasurementUnit::Inch->value,
                 'height'            => 24.000,
                 'width'             => 48.000,
                 'sqft_rate'         => 88.00,
+                'price_per_item'    => 704.00,
                 'product_total'     => 16896.00,
                 'sort_order'        => 0,
             ]);
@@ -157,11 +160,12 @@ class OrderSeeder extends Seeder
             $room->items()->create([
                 'design_variant_id' => $v4?->id,
                 'item_type'         => ItemType::Piece->value,
-                'number_of_pieces'  => 60,
+                'quantity'          => 60,
                 'measurement_unit'  => MeasurementUnit::Inch->value,
                 'height'            => 12.000,
                 'width'             => 12.000,
                 'sqft_rate'         => 26.00,
+                'price_per_item'    => 26.00,
                 'product_total'     => 1560.00,
                 'sort_order'        => 0,
             ]);

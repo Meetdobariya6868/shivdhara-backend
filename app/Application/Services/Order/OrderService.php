@@ -28,9 +28,9 @@ use Illuminate\Support\Facades\Storage;
  * Business logic for the Orders module: listing (read) and creation (write).
  *
  * Order creation find-or-creates the customer and each item's catalogue
- * product, then persists the whole graph atomically. The line total
- * (product_total) is supplied per item and the order grand_total is summed
- * from those plus transportation.
+ * product, then persists the whole graph atomically. Each line total
+ * (product_total) is derived server-side from the per-item price and quantity;
+ * the order grand_total is summed from those plus transportation.
  */
 final class OrderService extends BaseService
 {
@@ -141,22 +141,30 @@ final class OrderService extends BaseService
                             sellRate: $itemDto->sellRate,
                         );
 
+                    $piecesPerBox = $type === ItemType::Box ? $itemDto->piecesPerBox : null;
+                    $productTotal = $this->computeProductTotal(
+                        $type,
+                        $itemDto->pricePerItem,
+                        $itemDto->quantity,
+                        $piecesPerBox,
+                    );
+
                     $itemsData[] = [
                         'design_variant_id'  => $variant->id,
                         'product_image_path' => $itemDto->productImagePath,
                         'item_type'          => $type->value,
-                        'pieces_per_box'     => $type === ItemType::Box ? $itemDto->piecesPerBox : null,
-                        'number_of_boxes'    => $type === ItemType::Box ? $itemDto->numberOfBoxes : null,
-                        'number_of_pieces'   => $type === ItemType::Piece ? $itemDto->numberOfPieces : null,
+                        'quantity'           => $itemDto->quantity,
+                        'pieces_per_box'     => $piecesPerBox,
                         'measurement_unit'   => $unit->value,
                         'height'             => $itemDto->height,
                         'width'              => $itemDto->width,
                         'sqft_rate'          => $itemDto->sellRate,
-                        'product_total'      => $itemDto->productTotal,
+                        'price_per_item'     => $itemDto->pricePerItem,
+                        'product_total'      => $productTotal,
                         'sort_order'         => $index,
                     ];
 
-                    $orderProductTotal += $itemDto->productTotal;
+                    $orderProductTotal += $productTotal;
                 }
 
                 $roomsData[] = [
@@ -219,7 +227,40 @@ final class OrderService extends BaseService
      */
     public function updateItem(OrderItem $item, array $data): Order
     {
+        $type         = ItemType::from((string) $data['item_type']);
+        $piecesPerBox = $type === ItemType::Box && isset($data['pieces_per_box'])
+            ? (int) $data['pieces_per_box']
+            : null;
+
+        // Normalise the type-conditional field and derive the line total
+        // server-side — never trust a client-supplied product_total.
+        $data['pieces_per_box'] = $piecesPerBox;
+        $data['product_total']  = $this->computeProductTotal(
+            $type,
+            (float) $data['price_per_item'],
+            (int) $data['quantity'],
+            $piecesPerBox,
+        );
+
         return $this->orderRepository->updateItem($item, $data);
+    }
+
+    /**
+     * Derive an item's line total from its per-item price and quantity.
+     * Box items bill every piece across all boxes (pieces_per_box × boxes);
+     * piece items bill the piece count directly.
+     */
+    private function computeProductTotal(
+        ItemType $type,
+        float $pricePerItem,
+        int $quantity,
+        ?int $piecesPerBox,
+    ): float {
+        $totalPieces = $type === ItemType::Box
+            ? $quantity * (int) $piecesPerBox
+            : $quantity;
+
+        return round($pricePerItem * $totalPieces, 2);
     }
 
     /**
