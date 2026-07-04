@@ -68,6 +68,17 @@ final class UserService extends BaseService
     }
 
     /**
+     * Update the given user's own profile (name + mobile). Role-agnostic — used
+     * by the self-service profile screen for both admins and salesmen.
+     */
+    public function updateProfile(User $user, UpdateUserDTO $dto): User
+    {
+        return DB::transaction(
+            fn (): User => $this->userRepository->update($user->id, $dto->toArray()),
+        );
+    }
+
+    /**
      * Grant or revoke a salesman's permission to create orders. No token
      * revocation is needed — OrderPolicy@create reads the live flag on the
      * salesman's next request, so a revoked permission takes effect immediately.

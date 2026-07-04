@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\Catalog\DesignVariantController;
 use App\Http\Controllers\Api\V1\Order\OrderController;
 use App\Http\Controllers\Api\V1\Order\OrderItemController;
 use App\Http\Controllers\Api\V1\Order\OrderRoomController;
+use App\Http\Controllers\Api\V1\Profile\ProfileController;
 use App\Http\Controllers\Api\V1\User\UserController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Route;
@@ -51,6 +52,15 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
             Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
             Route::get('/me', [AuthController::class, 'me'])->name('me');
         });
+    });
+
+    /*
+    |------------------------------------------------------------------
+    | Profile (current user, any role — edits only themselves)
+    |------------------------------------------------------------------
+    */
+    Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     });
 
     /*
