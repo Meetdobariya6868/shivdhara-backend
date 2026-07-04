@@ -8,6 +8,7 @@ use App\Domain\Enums\ItemType;
 use App\Domain\Enums\MeasurementUnit;
 use App\Models\Order;
 use App\Models\OrderType;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -25,6 +26,15 @@ final class StoreOrderRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user()?->can('create', Order::class) ?? false;
+    }
+
+    /**
+     * A salesman only fails this gate when they lack the create-orders
+     * permission — surface a specific message instead of the generic 403.
+     */
+    protected function failedAuthorization(): void
+    {
+        throw new AuthorizationException("You don't have permission to create orders.");
     }
 
     /** @return array<string, mixed> */

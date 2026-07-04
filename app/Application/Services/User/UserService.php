@@ -7,6 +7,7 @@ namespace App\Application\Services\User;
 use App\Application\DTOs\User\CreateUserDTO;
 use App\Application\DTOs\User\UpdateUserDTO;
 use App\Application\Services\BaseService;
+use App\Domain\Contracts\OrderRepositoryInterface;
 use App\Domain\Contracts\UserRepositoryInterface;
 use App\Domain\Enums\UserRole;
 use App\Domain\Enums\UserStatus;
@@ -23,6 +24,7 @@ final class UserService extends BaseService
 {
     public function __construct(
         private readonly UserRepositoryInterface $userRepository,
+        private readonly OrderRepositoryInterface $orderRepository,
     ) {}
 
     /**
@@ -66,6 +68,27 @@ final class UserService extends BaseService
     }
 
     /**
+     * Grant or revoke a salesman's permission to create orders. No token
+     * revocation is needed — OrderPolicy@create reads the live flag on the
+     * salesman's next request, so a revoked permission takes effect immediately.
+     */
+    public function updatePermissions(User $user, bool $canCreateOrders): User
+    {
+        return DB::transaction(function () use ($user, $canCreateOrders): User {
+            $updated = $this->userRepository->update($user->id, [
+                'can_create_orders' => $canCreateOrders,
+            ]);
+
+            Log::info('[Users] Permissions changed', [
+                'user_id'           => $user->id,
+                'can_create_orders' => $canCreateOrders,
+            ]);
+
+            return $updated;
+        });
+    }
+
+    /**
      * Block or unblock a salesman. When blocking, all of the user's active
      * API tokens are revoked so the change takes effect immediately.
      */
@@ -105,15 +128,23 @@ final class UserService extends BaseService
     }
 
     /**
-     * Soft-delete a salesman and revoke their tokens.
+     * Soft-delete a salesman: their orders are soft-deleted first (so nothing
+     * references a removed account and they drop out of every list and filter),
+     * then their tokens are revoked and the account itself is soft-deleted.
+     * The whole cascade runs in one transaction for atomicity.
      */
     public function deleteSalesman(User $user): void
     {
         DB::transaction(function () use ($user): void {
+            $deletedOrders = $this->orderRepository->deleteByCreator($user->id);
+
             $user->tokens()->delete();
             $this->userRepository->delete($user->id);
 
-            Log::info('[Users] Salesman deleted', ['user_id' => $user->id]);
+            Log::info('[Users] Salesman deleted', [
+                'user_id'        => $user->id,
+                'deleted_orders' => $deletedOrders,
+            ]);
         });
     }
 }

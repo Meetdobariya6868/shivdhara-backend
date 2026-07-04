@@ -23,9 +23,11 @@ final class OrderResource extends JsonResource
                 'name'    => $this->customer->name,
                 'contact' => $this->customer->contact,
             ],
+            // creator() uses withTrashed(), so a deleted salesman still resolves.
+            // The null-safe access is a final guard against a force-deleted user.
             'creator'               => [
-                'id'   => $this->creator->id,
-                'name' => $this->creator->name,
+                'id'   => $this->creator?->id,
+                'name' => $this->creator?->name,
             ],
             'category'              => [
                 'id'   => $this->orderCategory->id,

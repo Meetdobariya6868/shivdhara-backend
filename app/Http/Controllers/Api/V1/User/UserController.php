@@ -11,6 +11,7 @@ use App\Domain\Enums\UserStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\User\StoreUserRequest;
 use App\Http\Requests\Api\V1\User\UpdatePasswordRequest;
+use App\Http\Requests\Api\V1\User\UpdatePermissionsRequest;
 use App\Http\Requests\Api\V1\User\UpdateStatusRequest;
 use App\Http\Requests\Api\V1\User\UpdateUserRequest;
 use App\Http\Resources\Api\V1\User\UserResource;
@@ -112,6 +113,22 @@ final class UserController extends Controller
         return $this->success(
             data: UserResource::make($updated),
             message: 'Salesman status updated.',
+        );
+    }
+
+    /**
+     * PATCH /users/{user}/permissions — grant / revoke the create-orders flag.
+     */
+    public function updatePermissions(UpdatePermissionsRequest $request, User $user): JsonResponse
+    {
+        $updated = $this->userService->updatePermissions(
+            $user,
+            $request->boolean('can_create_orders'),
+        );
+
+        return $this->success(
+            data: UserResource::make($updated),
+            message: 'Salesman permissions updated.',
         );
     }
 

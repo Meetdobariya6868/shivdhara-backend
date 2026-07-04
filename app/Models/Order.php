@@ -56,9 +56,14 @@ class Order extends Model
         return $this->belongsTo(OrderType::class, 'order_type_id');
     }
 
+    /**
+     * The salesman who created the order. Includes soft-deleted users so an
+     * order created by a since-deleted salesman still resolves their name/id
+     * (soft-delete is meant to preserve this historical attribution).
+     */
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'creator_id');
+        return $this->belongsTo(User::class, 'creator_id')->withTrashed();
     }
 
     public function updatedBy(): BelongsTo

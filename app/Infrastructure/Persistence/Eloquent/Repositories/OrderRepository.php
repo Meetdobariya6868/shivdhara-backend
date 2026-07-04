@@ -10,6 +10,9 @@ use App\Infrastructure\Persistence\Eloquent\BaseRepository;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderRoom;
+use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 class OrderRepository extends BaseRepository implements OrderRepositoryInterface
@@ -28,17 +31,79 @@ class OrderRepository extends BaseRepository implements OrderRepositoryInterface
     }
 
     /**
-     * @return Collection<int, Order>
+     * @param  array<string, mixed>  $filters
+     * @return LengthAwarePaginator<int, Order>
      */
-    public function listAll(): Collection
+    public function paginate(array $filters, int $perPage): LengthAwarePaginator
     {
-        /** @var Collection<int, Order> $result */
+        /** @var LengthAwarePaginator<int, Order> $result */
         $result = $this->model->newQuery()
             ->with(self::LIST_RELATIONS)
+            ->tap(fn (Builder $query) => $this->applyFilters($query, $filters))
             ->latest()
-            ->get();
+            ->paginate($perPage);
 
         return $result;
+    }
+
+    /**
+     * Apply the optional order-list filters. Every branch targets an indexed
+     * column (order_date, order_category_id, order_type_id, creator_id) so the
+     * query stays fast at scale; search matches the related customer.
+     *
+     * @param  Builder<Order>  $query
+     * @param  array<string, mixed>  $filters
+     */
+    private function applyFilters(Builder $query, array $filters): void
+    {
+        if (! empty($filters['search'])) {
+            $search = (string) $filters['search'];
+            $query->whereHas('customer', function (Builder $c) use ($search): void {
+                $c->where('name', 'like', "%{$search}%")
+                    ->orWhere('contact', 'like', "%{$search}%");
+            });
+        }
+
+        if (! empty($filters['date_from'])) {
+            $query->where('order_date', '>=', $filters['date_from']);
+        }
+
+        if (! empty($filters['date_to'])) {
+            $query->where('order_date', '<=', $filters['date_to']);
+        }
+
+        if (! empty($filters['order_category_id'])) {
+            $query->where('order_category_id', (int) $filters['order_category_id']);
+        }
+
+        if (! empty($filters['order_type_id'])) {
+            $query->where('order_type_id', (int) $filters['order_type_id']);
+        }
+
+        if (! empty($filters['creator_id'])) {
+            $query->where('creator_id', (int) $filters['creator_id']);
+        }
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function salesmenWithOrders(): Collection
+    {
+        /** @var Collection<int, User> $result */
+        $result = User::query()
+            ->whereHas('orders')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return $result;
+    }
+
+    public function deleteByCreator(int $creatorId): int
+    {
+        return $this->model->newQuery()
+            ->where('creator_id', $creatorId)
+            ->delete();
     }
 
     /**

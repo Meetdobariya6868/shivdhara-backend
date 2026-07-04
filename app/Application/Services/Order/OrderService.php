@@ -18,6 +18,7 @@ use App\Models\OrderItem;
 use App\Models\OrderRoom;
 use App\Models\OrderType;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
@@ -41,11 +42,25 @@ final class OrderService extends BaseService
     ) {}
 
     /**
-     * @return Collection<int, Order>
+     * A filtered, paginated page of orders for the admin list.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return LengthAwarePaginator<int, Order>
      */
-    public function listOrders(): Collection
+    public function paginateOrders(array $filters, int $perPage): LengthAwarePaginator
     {
-        return $this->orderRepository->listAll();
+        return $this->orderRepository->paginate($filters, $perPage);
+    }
+
+    /**
+     * Salesmen (including deleted) who have orders — options for the list's
+     * salesman filter.
+     *
+     * @return Collection<int, User>
+     */
+    public function salesmenWithOrders(): Collection
+    {
+        return $this->orderRepository->salesmenWithOrders();
     }
 
     /**

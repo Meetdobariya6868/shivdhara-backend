@@ -8,12 +8,14 @@ use App\Application\DTOs\Order\CreateOrderDTO;
 use App\Application\Services\Order\OrderService;
 use App\Domain\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Order\IndexOrderRequest;
 use App\Http\Requests\Api\V1\Order\StoreOrderRequest;
 use App\Http\Requests\Api\V1\Order\UpdateOrderStatusRequest;
 use App\Http\Requests\Api\V1\Order\UploadOrderItemImageRequest;
 use App\Http\Resources\Api\V1\Order\OrderCategoryResource;
 use App\Http\Resources\Api\V1\Order\OrderResource;
 use App\Http\Resources\Api\V1\Order\OrderTypeResource;
+use App\Http\Resources\Api\V1\Order\SalesmanOptionResource;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -32,16 +34,35 @@ final class OrderController extends Controller
     ) {}
 
     /**
-     * GET /orders — full order list (admin only).
-     * No pagination or server-side filtering; all filtering is client-side.
+     * GET /orders — paginated, server-filtered order list (admin only).
+     * Filters (search, date range, category, type, salesman) and pagination are
+     * applied in SQL against indexed columns; authorization via IndexOrderRequest.
      */
-    public function index(): JsonResponse
+    public function index(IndexOrderRequest $request): JsonResponse
+    {
+        $filters = $request->validated();
+        $perPage = (int) ($filters['per_page'] ?? 20);
+
+        $paginator = $this->orderService->paginateOrders($filters, $perPage);
+
+        return $this->paginated(
+            $paginator,
+            OrderResource::collection($paginator->getCollection()),
+            'Orders retrieved.',
+        );
+    }
+
+    /**
+     * GET /orders/salesmen — salesmen (incl. deleted) who have orders, for the
+     * order list's salesman filter dropdown. Admin only.
+     */
+    public function salesmen(): JsonResponse
     {
         $this->authorize('viewAny', Order::class);
 
         return $this->success(
-            data: OrderResource::collection($this->orderService->listOrders()),
-            message: 'Orders retrieved.',
+            data: SalesmanOptionResource::collection($this->orderService->salesmenWithOrders()),
+            message: 'Salesmen retrieved.',
         );
     }
 

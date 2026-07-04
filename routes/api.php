@@ -64,6 +64,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::patch('/users/{user}/status', [UserController::class, 'updateStatus'])->name('users.status');
+        Route::patch('/users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('users.permissions');
         Route::patch('/users/{user}/password', [UserController::class, 'updatePassword'])->name('users.password');
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
@@ -79,6 +80,10 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         // Admin-only list (authorization enforced via OrderPolicy)
         Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+
+        // Salesman filter options (admin) — must precede /orders/{order} so
+        // "salesmen" is not matched as an order id.
+        Route::get('/orders/salesmen', [OrderController::class, 'salesmen'])->name('orders.salesmen');
 
         // Single order detail (admin, or the salesman who created it — OrderPolicy@view)
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');

@@ -8,22 +8,47 @@ use App\Domain\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderRoom;
+use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
  * Persistence contract for the order aggregate.
- * All orders are returned in a single query; filtering/search happen client-side.
- * This keeps the API latency flat and eliminates per-keystroke requests.
+ * The admin list is paginated and filtered server-side (indexed columns), so
+ * the payload stays small and the query scales to large order volumes.
  */
 interface OrderRepositoryInterface extends RepositoryInterface
 {
     /**
-     * Return every order with its related customer, creator, category, and type
-     * eager-loaded. Ordered newest-first.
+     * A page of orders matching the given filters, newest-first, with the
+     * customer/creator/category/type relations eager-loaded for each row.
      *
-     * @return Collection<int, Order>
+     * Supported filter keys (all optional): search (customer name/contact),
+     * date_from, date_to, order_category_id, order_type_id, creator_id.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return LengthAwarePaginator<int, Order>
      */
-    public function listAll(): Collection;
+    public function paginate(array $filters, int $perPage): LengthAwarePaginator;
+
+    /**
+     * Distinct active (non-deleted) salesmen who have created at least one
+     * order — the option set for the orders "salesman" filter. Ordered by name.
+     * Deleted salesmen are excluded: deleting a salesman also deletes their
+     * orders, so they can never be a meaningful filter option.
+     *
+     * @return Collection<int, User>
+     */
+    public function salesmenWithOrders(): Collection;
+
+    /**
+     * Soft-delete every order created by the given salesman. Used when a
+     * salesman is deleted so nothing references a removed account. Executed as
+     * a single bulk update — no models are hydrated.
+     *
+     * @return int  Number of orders soft-deleted.
+     */
+    public function deleteByCreator(int $creatorId): int;
 
     /**
      * Every order created by the given salesman, newest-first, with the

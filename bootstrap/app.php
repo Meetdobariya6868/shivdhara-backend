@@ -44,12 +44,18 @@ return Application::configure(basePath: dirname(__DIR__))
             return null;
         });
 
-        // Authorization failure (policy / gate denial)
+        // Authorization failure (policy / gate denial). Surface a specific
+        // message when the denial provided one (e.g. StoreOrderRequest); fall
+        // back to the generic message for the framework default so bool-return
+        // policies keep behaving exactly as before.
         $exceptions->render(function (AuthorizationException|AccessDeniedHttpException $e, Request $request): ?Response {
             if ($request->expectsJson() || $request->is('api/*')) {
+                $message = $e->getMessage();
+                $isGeneric = $message === '' || $message === 'This action is unauthorized.';
+
                 return response()->json([
                     'success' => false,
-                    'message' => 'You are not authorized to perform this action.',
+                    'message' => $isGeneric ? 'You are not authorized to perform this action.' : $message,
                 ], Response::HTTP_FORBIDDEN);
             }
             return null;
