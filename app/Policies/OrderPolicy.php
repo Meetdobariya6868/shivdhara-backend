@@ -13,10 +13,15 @@ use App\Models\User;
  */
 final class OrderPolicy
 {
-    /** Full list view is admin-only. */
+    /**
+     * Any authenticated user may call the order list — admins see every order,
+     * salesmen see only their own. The result set is scoped in
+     * OrderService@paginateOrders, mirroring how @view already scopes a single
+     * order by creator for salesmen.
+     */
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin();
+        return true;
     }
 
     /** Admins can view any order; salesmen only their own. */

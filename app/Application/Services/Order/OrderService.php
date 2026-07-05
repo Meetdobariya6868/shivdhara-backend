@@ -42,13 +42,23 @@ final class OrderService extends BaseService
     ) {}
 
     /**
-     * A filtered, paginated page of orders for the admin list.
+     * A filtered, paginated page of orders for the order list — shared by the
+     * admin Home tab and the salesman Home tab.
+     *
+     * Admins see every order matching the filters. Salesmen are always scoped
+     * to their own orders: `creator_id` is forced to the actor's id regardless
+     * of what the client sent, so a salesman can never list another user's
+     * orders by tampering with the filter.
      *
      * @param  array<string, mixed>  $filters
      * @return LengthAwarePaginator<int, Order>
      */
-    public function paginateOrders(array $filters, int $perPage): LengthAwarePaginator
+    public function paginateOrders(array $filters, int $perPage, User $actor): LengthAwarePaginator
     {
+        if (! $actor->isAdmin()) {
+            $filters['creator_id'] = $actor->id;
+        }
+
         return $this->orderRepository->paginate($filters, $perPage);
     }
 

@@ -8,9 +8,11 @@ use App\Models\Order;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Validates the query parameters for the paginated admin order list.
- * Admin-only (OrderPolicy@viewAny). Filter ids are validated as integers only
- * — not `exists` — so filtering by a since-deactivated category/type or a
+ * Validates the query parameters for the paginated order list.
+ * Any authenticated user may call this (OrderPolicy@viewAny); the result set
+ * itself is scoped to "own orders only" for salesmen in
+ * OrderService@paginateOrders. Filter ids are validated as integers only — not
+ * `exists` — so filtering by a since-deactivated category/type or a
  * soft-deleted salesman still works (it simply narrows the result set).
  */
 final class IndexOrderRequest extends FormRequest

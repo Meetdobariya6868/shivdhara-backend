@@ -34,7 +34,9 @@ final class OrderController extends Controller
     ) {}
 
     /**
-     * GET /orders — paginated, server-filtered order list (admin only).
+     * GET /orders — paginated, server-filtered order list. Shared by the admin
+     * and salesman Home tabs: admins see every order, salesmen see only their
+     * own (enforced in OrderService@paginateOrders, never trusting the client).
      * Filters (search, date range, category, type, salesman) and pagination are
      * applied in SQL against indexed columns; authorization via IndexOrderRequest.
      */
@@ -43,7 +45,7 @@ final class OrderController extends Controller
         $filters = $request->validated();
         $perPage = (int) ($filters['per_page'] ?? 20);
 
-        $paginator = $this->orderService->paginateOrders($filters, $perPage);
+        $paginator = $this->orderService->paginateOrders($filters, $perPage, $request->user());
 
         return $this->paginated(
             $paginator,
@@ -54,11 +56,13 @@ final class OrderController extends Controller
 
     /**
      * GET /orders/salesmen — salesmen (incl. deleted) who have orders, for the
-     * order list's salesman filter dropdown. Admin only.
+     * admin order list's salesman filter dropdown. Admin only — deliberately
+     * NOT gated by OrderPolicy@viewAny (which now also allows salesmen to list
+     * their own orders); exposing the full salesman roster stays admin-only.
      */
-    public function salesmen(): JsonResponse
+    public function salesmen(Request $request): JsonResponse
     {
-        $this->authorize('viewAny', Order::class);
+        abort_unless($request->user()?->isAdmin() ?? false, Response::HTTP_FORBIDDEN);
 
         return $this->success(
             data: SalesmanOptionResource::collection($this->orderService->salesmenWithOrders()),
