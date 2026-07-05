@@ -68,14 +68,12 @@ class ProductCatalogRepository implements ProductCatalogRepositoryInterface
     }
 
     /**
-     * Build a stable, unique-per-company design code from the design name.
-     * A short name hash guards the (company_id, design_code) unique index against
-     * two differently-named designs slugging to the same code.
+     * Build a design code from an 8-character hash of the design name.
+     * Deterministic (the same name always yields the same code) and short
+     * enough to type/search, at a negligible collision risk per company.
      */
     private function makeDesignCode(string $designName): string
     {
-        $slug = Str::upper(Str::slug($designName)) ?: 'DSN';
-
-        return Str::substr($slug, 0, 48).'-'.Str::substr(md5($designName), 0, 8);
+        return Str::substr(md5($designName), 0, 8);
     }
 }

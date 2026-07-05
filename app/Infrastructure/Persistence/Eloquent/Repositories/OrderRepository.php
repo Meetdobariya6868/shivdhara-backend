@@ -14,6 +14,7 @@ use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Carbon;
 
 class OrderRepository extends BaseRepository implements OrderRepositoryInterface
 {
@@ -48,8 +49,13 @@ class OrderRepository extends BaseRepository implements OrderRepositoryInterface
 
     /**
      * Apply the optional order-list filters. Every branch targets an indexed
-     * column (order_date, order_category_id, order_type_id, creator_id) so the
+     * column (created_at, order_category_id, order_type_id, creator_id) so the
      * query stays fast at scale; search matches the related customer.
+     *
+     * date_from/date_to filter by creation date (an order has no separate
+     * "order date" — created_at is the single source of truth). Comparing
+     * against day-boundary timestamps, rather than wrapping the column in
+     * whereDate(), keeps the created_at index usable.
      *
      * @param  Builder<Order>  $query
      * @param  array<string, mixed>  $filters
@@ -65,11 +71,11 @@ class OrderRepository extends BaseRepository implements OrderRepositoryInterface
         }
 
         if (! empty($filters['date_from'])) {
-            $query->where('order_date', '>=', $filters['date_from']);
+            $query->where('created_at', '>=', Carbon::parse($filters['date_from'])->startOfDay());
         }
 
         if (! empty($filters['date_to'])) {
-            $query->where('order_date', '<=', $filters['date_to']);
+            $query->where('created_at', '<=', Carbon::parse($filters['date_to'])->endOfDay());
         }
 
         if (! empty($filters['order_category_id'])) {

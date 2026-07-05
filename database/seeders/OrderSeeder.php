@@ -39,12 +39,11 @@ class OrderSeeder extends Seeder
 
         // ── Order 1 ───────────────────────────────────────────────────────
         DB::transaction(function () use ($admin, $c1, $marble, $local, $v1, $v2) {
-            if (Order::where('customer_id', $c1->id)->where('order_date', '2026-06-01')->exists()) {
+            if (Order::where('customer_id', $c1->id)->exists()) {
                 return;
             }
 
             $order = Order::create([
-                'order_date'            => '2026-06-01',
                 'customer_id'           => $c1->id,
                 'order_category_id'     => $marble->id,
                 'order_type_id'         => $local->id,
@@ -97,12 +96,11 @@ class OrderSeeder extends Seeder
 
         // ── Order 2 ───────────────────────────────────────────────────────
         DB::transaction(function () use ($salesman, $c2, $granito, $arch, $v3) {
-            if (Order::where('customer_id', $c2->id)->where('order_date', '2026-06-10')->exists()) {
+            if (Order::where('customer_id', $c2->id)->exists()) {
                 return;
             }
 
             $order = Order::create([
-                'order_date'            => '2026-06-10',
                 'customer_id'           => $c2->id,
                 'order_category_id'     => $granito->id,
                 'order_type_id'         => $arch->id,
@@ -136,12 +134,11 @@ class OrderSeeder extends Seeder
 
         // ── Order 3 (piece-type items) ────────────────────────────────────
         DB::transaction(function () use ($admin, $c3, $marble, $local, $v4) {
-            if (Order::where('customer_id', $c3->id)->where('order_date', '2026-06-20')->exists()) {
+            if (Order::where('customer_id', $c3->id)->exists()) {
                 return;
             }
 
             $order = Order::create([
-                'order_date'            => '2026-06-20',
                 'customer_id'           => $c3->id,
                 'order_category_id'     => $marble->id,
                 'order_type_id'         => $local->id,

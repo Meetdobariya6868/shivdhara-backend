@@ -108,7 +108,6 @@ class DemoSalesmenSeeder extends Seeder
             $type     = $types[($n + $j) % $types->count()];
 
             $order = Order::create([
-                'order_date'            => now()->subDays(($n - 1) * 4 + $j)->toDateString(),
                 'customer_id'           => $customer->id,
                 'order_category_id'     => $category->id,
                 'order_type_id'         => $type->id,

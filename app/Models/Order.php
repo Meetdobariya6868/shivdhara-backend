@@ -16,7 +16,6 @@ class Order extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'order_date',
         'customer_id',
         'order_category_id',
         'order_type_id',
@@ -33,7 +32,6 @@ class Order extends Model
     protected function casts(): array
     {
         return [
-            'order_date'            => 'date',
             'advance_payment'       => 'decimal:2',
             'transportation_charge' => 'decimal:2',
             'grand_total'           => 'decimal:2',

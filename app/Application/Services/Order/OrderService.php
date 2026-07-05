@@ -203,7 +203,6 @@ final class OrderService extends BaseService
 
             return $this->orderRepository->createGraph(
                 orderAttributes: [
-                    'order_date'            => now()->toDateString(),
                     'customer_id'           => $customer->id,
                     'order_category_id'     => $dto->orderCategoryId,
                     'order_type_id'         => $dto->orderTypeId,
