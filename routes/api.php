@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\Catalog\DesignController;
 use App\Http\Controllers\Api\V1\Catalog\DesignVariantController;
 use App\Http\Controllers\Api\V1\Order\OrderController;
 use App\Http\Controllers\Api\V1\Order\OrderItemController;
@@ -116,6 +117,17 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
         // Catalogue autocomplete for the Add-Item modal (FULLTEXT-backed search).
         Route::get('/design-variants/search', [DesignVariantController::class, 'search'])->name('design-variants.search');
+    });
+
+    /*
+    |------------------------------------------------------------------
+    | Catalogue Management (Admin — authorization enforced per endpoint)
+    |------------------------------------------------------------------
+    */
+    Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
+        Route::get('/designs', [DesignController::class, 'index'])->name('designs.index');
+        Route::get('/designs/{design}', [DesignController::class, 'show'])->name('designs.show');
+        Route::patch('/design-variants/{designVariant}', [DesignVariantController::class, 'update'])->name('design-variants.update');
     });
 
 });

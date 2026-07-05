@@ -11,10 +11,11 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            UserSeeder::class,     // no FK deps
-            CustomerSeeder::class, // depends on users
-            CatalogSeeder::class,  // companies → designs → design_variants
-            OrderSeeder::class,    // orders → order_rooms → order_items
+            UserSeeder::class,          // no FK deps
+            CustomerSeeder::class,      // depends on users
+            CatalogSeeder::class,       // companies → designs → design_variants
+            OrderSeeder::class,         // orders → order_rooms → order_items
+            DemoSalesmenSeeder::class,  // 10 salesmen, each with demo orders
         ]);
     }
 }

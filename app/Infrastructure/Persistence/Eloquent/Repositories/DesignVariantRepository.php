@@ -121,4 +121,17 @@ class DesignVariantRepository implements DesignVariantRepositoryInterface
     {
         return str_replace(['+', '-', '*', '"', '(', ')', '~', '<', '>', '@'], '', $token);
     }
+
+    /**
+     * @param  array{purchase_rate: float|int|string, sell_rate: float|int|string}  $rates
+     */
+    public function updateRates(DesignVariant $variant, array $rates): DesignVariant
+    {
+        $variant->update([
+            'purchase_rate' => $rates['purchase_rate'],
+            'sell_rate'     => $rates['sell_rate'],
+        ]);
+
+        return $variant->refresh();
+    }
 }
