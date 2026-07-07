@@ -138,7 +138,8 @@ class OrderRepository extends BaseRepository implements OrderRepositoryInterface
         $order = $this->model->newQuery()
             ->with([
                 'customer:id,name,contact',
-                'creator:id,name',
+                // mobile_number powers the quotation's "Sales Manager" contact line.
+                'creator:id,name,mobile_number',
                 'orderCategory:id,name',
                 'orderType:id,name',
                 'rooms' => fn ($q) => $q->orderBy('sort_order'),

@@ -6,9 +6,11 @@ namespace App\Http\Controllers\Api\V1\Order;
 
 use App\Application\DTOs\Order\CreateOrderDTO;
 use App\Application\Services\Order\OrderService;
+use App\Application\Services\Order\QuotationService;
 use App\Domain\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Order\IndexOrderRequest;
+use App\Http\Requests\Api\V1\Order\QuotationRequest;
 use App\Http\Requests\Api\V1\Order\StoreOrderRequest;
 use App\Http\Requests\Api\V1\Order\UpdateOrderStatusRequest;
 use App\Http\Requests\Api\V1\Order\UploadOrderItemImageRequest;
@@ -31,6 +33,7 @@ final class OrderController extends Controller
 {
     public function __construct(
         private readonly OrderService $orderService,
+        private readonly QuotationService $quotationService,
     ) {}
 
     /**
@@ -99,6 +102,23 @@ final class OrderController extends Controller
             data: OrderResource::make($this->orderService->getOrderDetail($order->id)),
             message: 'Order retrieved.',
         );
+    }
+
+    /**
+     * GET /orders/{order}/quotation?format=name|code — the order's quotation PDF.
+     * "name" prints design names + finish; "code" prints design codes. Streamed
+     * inline; the client fetches it as a blob to view or download. Authorization
+     * via QuotationRequest (OrderPolicy@view).
+     */
+    public function quotation(QuotationRequest $request, Order $order): Response
+    {
+        /** @var 'name'|'code' $format */
+        $format = $request->validated('format');
+
+        $detail = $this->orderService->getOrderDetail($order->id);
+
+        return $this->quotationService->render($detail, $format)
+            ->stream("quotation-order-{$order->id}-{$format}.pdf");
     }
 
     /**

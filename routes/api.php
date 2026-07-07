@@ -99,6 +99,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         // Single order detail (admin, or the salesman who created it — OrderPolicy@view)
         Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
 
+        // Order quotation PDF (?format=name|code) — same viewer authorization.
+        Route::get('/orders/{order}/quotation', [OrderController::class, 'quotation'])->name('orders.quotation');
+
         // Create order — shared by admin + salesman (authorization via OrderPolicy@create)
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
         Route::post('/order-item-images', [OrderController::class, 'uploadItemImage'])->name('orders.item-images.store');
