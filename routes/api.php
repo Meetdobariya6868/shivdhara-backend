@@ -108,8 +108,12 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
         // Order mutations (authorization via OrderPolicy@update / @delete)
         Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.status');
+        Route::patch('/orders/{order}/details', [OrderController::class, 'updateDetails'])->name('orders.details.update');
         Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
+        Route::post('/orders/{order}/rooms', [OrderRoomController::class, 'store'])->name('orders.rooms.store');
         Route::patch('/order-rooms/{orderRoom}', [OrderRoomController::class, 'update'])->name('order-rooms.update');
+        Route::delete('/order-rooms/{orderRoom}', [OrderRoomController::class, 'destroy'])->name('order-rooms.destroy');
+        Route::post('/order-rooms/{orderRoom}/items', [OrderItemController::class, 'store'])->name('order-rooms.items.store');
         Route::patch('/order-items/{orderItem}', [OrderItemController::class, 'update'])->name('order-items.update');
         Route::delete('/order-items/{orderItem}', [OrderItemController::class, 'destroy'])->name('order-items.destroy');
         Route::patch('/order-items/{orderItem}/move', [OrderItemController::class, 'move'])->name('order-items.move');

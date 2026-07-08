@@ -77,8 +77,34 @@ interface OrderRepositoryInterface extends RepositoryInterface
     /** Set the workflow status of an order and return the reloaded detail graph. */
     public function updateStatus(Order $order, OrderStatus $status): Order;
 
+    /**
+     * Overwrite an order's header fields (category, type, order date, updater)
+     * and return the reloaded detail graph. Does not touch the customer —
+     * callers update the Customer record separately via CustomerRepository.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function updateDetails(Order $order, array $attributes): Order;
+
+    /** Append a new (empty) room to an order and return the reloaded detail graph. */
+    public function createRoom(Order $order, string $roomName): Order;
+
     /** Rename a room and return the reloaded parent order detail graph. */
     public function renameRoom(OrderRoom $room, string $roomName): Order;
+
+    /**
+     * Soft-delete an empty room and return the reloaded parent order detail
+     * graph. The caller is responsible for verifying the room has no items.
+     */
+    public function deleteRoom(OrderRoom $room): Order;
+
+    /**
+     * Append a new item to a room and return the reloaded order detail graph.
+     * Also recomputes the parent order's grand_total.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function addItem(OrderRoom $room, array $attributes): Order;
 
     /** Move an item to another room (same order) and return the reloaded order detail graph. */
     public function moveItem(OrderItem $item, int $targetRoomId): Order;

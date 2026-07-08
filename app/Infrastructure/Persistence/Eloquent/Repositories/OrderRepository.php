@@ -189,6 +189,39 @@ class OrderRepository extends BaseRepository implements OrderRepositoryInterface
         return $detail;
     }
 
+    public function createRoom(Order $order, string $roomName): Order
+    {
+        // Append after the last room so the new one sorts to the bottom.
+        $nextSort = (int) $order->rooms()->max('sort_order') + 1;
+
+        $order->rooms()->create([
+            'room_name'  => $roomName,
+            'sort_order' => $nextSort,
+        ]);
+
+        /** @var Order $detail */
+        $detail = $this->findDetail($order->id);
+
+        return $detail;
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    public function updateDetails(Order $order, array $attributes): Order
+    {
+        $order->order_category_id = $attributes['order_category_id'];
+        $order->order_type_id     = $attributes['order_type_id'];
+        $order->updated_by_id     = $attributes['updated_by_id'];
+        $order->created_at        = $attributes['created_at'];
+        $order->save();
+
+        /** @var Order $detail */
+        $detail = $this->findDetail($order->id);
+
+        return $detail;
+    }
+
     public function renameRoom(OrderRoom $room, string $roomName): Order
     {
         $room->room_name = $roomName;
@@ -196,6 +229,34 @@ class OrderRepository extends BaseRepository implements OrderRepositoryInterface
 
         /** @var Order $detail */
         $detail = $this->findDetail($room->order_id);
+
+        return $detail;
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     */
+    public function addItem(OrderRoom $room, array $attributes): Order
+    {
+        $nextSort = (int) $room->items()->max('sort_order') + 1;
+
+        $room->items()->create($attributes + ['sort_order' => $nextSort]);
+        $this->recalcOrderTotal($room->order_id);
+
+        /** @var Order $detail */
+        $detail = $this->findDetail($room->order_id);
+
+        return $detail;
+    }
+
+    public function deleteRoom(OrderRoom $room): Order
+    {
+        $orderId = $room->order_id;
+
+        $room->delete();
+
+        /** @var Order $detail */
+        $detail = $this->findDetail($orderId);
 
         return $detail;
     }

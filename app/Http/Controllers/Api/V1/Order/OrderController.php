@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Order;
 
 use App\Application\DTOs\Order\CreateOrderDTO;
+use App\Application\DTOs\Order\UpdateOrderDetailsDTO;
 use App\Application\Services\Order\OrderService;
 use App\Application\Services\Order\QuotationService;
 use App\Domain\Enums\OrderStatus;
@@ -12,6 +13,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Order\IndexOrderRequest;
 use App\Http\Requests\Api\V1\Order\QuotationRequest;
 use App\Http\Requests\Api\V1\Order\StoreOrderRequest;
+use App\Http\Requests\Api\V1\Order\UpdateOrderDetailsRequest;
 use App\Http\Requests\Api\V1\Order\UpdateOrderStatusRequest;
 use App\Http\Requests\Api\V1\Order\UploadOrderItemImageRequest;
 use App\Http\Resources\Api\V1\Order\OrderCategoryResource;
@@ -190,6 +192,25 @@ final class OrderController extends Controller
         return $this->success(
             data: OrderResource::make($updated),
             message: 'Order status updated.',
+        );
+    }
+
+    /**
+     * PATCH /orders/{order}/details — edit customer name/contact, category,
+     * type and order date. Authorization via OrderPolicy@update (enforced in
+     * UpdateOrderDetailsRequest).
+     */
+    public function updateDetails(UpdateOrderDetailsRequest $request, Order $order): JsonResponse
+    {
+        $updated = $this->orderService->updateDetails(
+            $order,
+            UpdateOrderDetailsDTO::fromArray($request->validated()),
+            $request->user(),
+        );
+
+        return $this->success(
+            data: OrderResource::make($updated),
+            message: 'Order details updated.',
         );
     }
 

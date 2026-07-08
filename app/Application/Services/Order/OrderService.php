@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Application\Services\Order;
 
 use App\Application\DTOs\Order\CreateOrderDTO;
+use App\Application\DTOs\Order\CreateOrderItemDTO;
+use App\Application\DTOs\Order\UpdateOrderDetailsDTO;
 use App\Application\Services\BaseService;
 use App\Domain\Contracts\CustomerRepositoryInterface;
 use App\Domain\Contracts\OrderRepositoryInterface;
@@ -22,8 +24,10 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Business logic for the Orders module: listing (read) and creation (write).
@@ -133,12 +137,15 @@ final class OrderService extends BaseService
                 ? trim($dto->architectName)
                 : null;
 
-            $customer = $this->customerRepository->findByContact(trim($dto->customerContact))
-                ?? $this->customerRepository->create([
-                    'name'          => trim($dto->customerName),
-                    'contact'       => trim($dto->customerContact),
-                    'created_by_id' => $creator->id,
-                ]);
+            // Every order gets its own dedicated Customer record, even when the
+            // name/contact match an existing one exactly — customers are never
+            // deduped or shared across orders, so editing one order's customer
+            // details can never affect another order.
+            $customer = $this->customerRepository->create([
+                'name'          => trim($dto->customerName),
+                'contact'       => trim($dto->customerContact),
+                'created_by_id' => $creator->id,
+            ]);
 
             $roomsData         = [];
             $orderProductTotal = 0.0;
@@ -231,16 +238,111 @@ final class OrderService extends BaseService
         $this->orderRepository->delete($order->id);
     }
 
+    /**
+     * Edit an order's header fields from the order detail screen: customer
+     * name/contact, category, type, and order date.
+     *
+     * The customer edit updates the shared Customer record directly (by
+     * design) — every other order from the same customer reflects the
+     * correction too, rather than re-linking this order to a different
+     * customer. The order date only replaces the calendar date portion of
+     * created_at; the original time-of-day is preserved.
+     */
+    public function updateDetails(Order $order, UpdateOrderDetailsDTO $dto, User $actor): Order
+    {
+        return DB::transaction(function () use ($order, $dto, $actor): Order {
+            $this->customerRepository->update($order->customer_id, [
+                'name'    => trim($dto->customerName),
+                'contact' => trim($dto->customerContact),
+            ]);
+
+            $orderDate = Carbon::parse($dto->orderDate)
+                ->setTimeFromTimeString($order->created_at->format('H:i:s'));
+
+            return $this->orderRepository->updateDetails($order, [
+                'order_category_id' => $dto->orderCategoryId,
+                'order_type_id'     => $dto->orderTypeId,
+                'created_at'        => $orderDate,
+                'updated_by_id'     => $actor->id,
+            ]);
+        });
+    }
+
+    /** Add a new, empty room to an order. */
+    public function addRoom(Order $order, string $roomName): Order
+    {
+        return $this->orderRepository->createRoom($order, trim($roomName));
+    }
+
     /** Rename a room within an order. */
     public function renameRoom(OrderRoom $room, string $roomName): Order
     {
         return $this->orderRepository->renameRoom($room, trim($roomName));
     }
 
+    /**
+     * Delete an empty room. Refuses (409) if the room still has any items —
+     * the caller must move or delete those items first.
+     */
+    public function deleteRoom(OrderRoom $room): Order
+    {
+        abort_if(
+            $room->items()->exists(),
+            Response::HTTP_CONFLICT,
+            'This room still has items and cannot be deleted.',
+        );
+
+        return $this->orderRepository->deleteRoom($room);
+    }
+
     /** Move an item to another room belonging to the same order. */
     public function moveItem(OrderItem $item, int $targetRoomId): Order
     {
         return $this->orderRepository->moveItem($item, $targetRoomId);
+    }
+
+    /**
+     * Add a new item to an existing room, resolving its catalogue product the
+     * same way order creation does (linked variant id, or free-text find-or-create).
+     */
+    public function addItem(OrderRoom $room, CreateOrderItemDTO $dto): Order
+    {
+        return DB::transaction(function () use ($room, $dto): Order {
+            $variant = ($dto->designVariantId !== null
+                ? $this->catalog->findVariant($dto->designVariantId)
+                : null)
+                ?? $this->catalog->resolveVariant(
+                    companyName: $dto->companyName,
+                    designName: $dto->designName,
+                    size: $dto->size,
+                    finish: $dto->finish,
+                    thickness: $dto->thickness,
+                    purchaseRate: $dto->purchaseRate,
+                    sellRate: $dto->sellRate,
+                );
+
+            $type         = ItemType::from($dto->itemType);
+            $piecesPerBox = $type === ItemType::Box ? $dto->piecesPerBox : null;
+
+            return $this->orderRepository->addItem($room, [
+                'design_variant_id'  => $variant->id,
+                'product_image_path' => $dto->productImagePath,
+                'item_type'          => $type->value,
+                'quantity'           => $dto->quantity,
+                'pieces_per_box'     => $piecesPerBox,
+                'measurement_unit'   => $dto->measurementUnit,
+                'height'             => $dto->height,
+                'width'              => $dto->width,
+                'sqft_rate'          => $dto->sellRate,
+                'price_per_item'     => $dto->pricePerItem,
+                'product_total'      => $this->computeProductTotal(
+                    $type,
+                    $dto->pricePerItem,
+                    $dto->quantity,
+                    $piecesPerBox,
+                ),
+            ]);
+        });
     }
 
     /**

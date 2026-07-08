@@ -41,9 +41,8 @@
         td.room { color: #dc2626; font-weight: bold; text-align: center; }
         .design-name { font-weight: bold; }
         .design-finish { color: #444; font-size: 9px; }
-        .qty-box { color: #444; font-size: 9px; }
-        .thumb { width: 40px; height: 40px; object-fit: cover; }
-        .thumb-empty { display: block; width: 40px; height: 40px; background: #f1f5f9; }
+        .thumb { width: 90px; height: 70px; object-fit: cover; }
+        .thumb-empty { display: block; width: 90px; height: 70px; background: #f1f5f9; }
 
         table.totals { width: 42%; border-collapse: collapse; margin-left: auto; margin-top: -1px; }
         table.totals td { border: 1px solid #444; padding: 5px 6px; color: #dc2626; }
@@ -87,24 +86,26 @@
         <thead>
             <tr>
                 <th style="width:6%">Sr.No</th>
-                <th style="width:12%">Size</th>
-                <th style="width:26%">Design {{ $mode === 'code' ? 'Code' : 'Name' }}</th>
-                <th style="width:12%">Image</th>
-                <th style="width:11%">Sq.Ft Rate</th>
-                <th style="width:12%">Rate Pcs</th>
+                <th style="width:11%">Size</th>
+                <th style="width:21%">Design {{ $mode === 'code' ? 'Code' : 'Name' }}</th>
+                <th style="width:20%">Image</th>
+                <th style="width:10%">Sq.Ft Rate</th>
+                <th style="width:11%">Rate Pcs</th>
                 <th style="width:10%">No Of QTY</th>
                 <th style="width:11%">Amount</th>
             </tr>
         </thead>
         <tbody>
             @forelse ($rooms as $room)
-                <tr>
-                    <td class="num">{{ $room['sr'] }}</td>
-                    <td class="room" colspan="7">{{ $room['name'] }}</td>
-                </tr>
+                @unless ($room['flat'])
+                    <tr>
+                        <td class="num">{{ $room['sr'] }}</td>
+                        <td class="room" colspan="7">{{ $room['name'] }}</td>
+                    </tr>
+                @endunless
                 @foreach ($room['items'] as $item)
                     <tr>
-                        <td></td>
+                        <td class="num">{{ $item['sr'] }}</td>
                         <td class="num">{{ $item['size'] }}</td>
                         <td>
                             <span class="design-name">{{ $item['name'] }}</span>
@@ -119,10 +120,7 @@
                         </td>
                         <td class="money">{{ number_format($item['sqft_rate'], 2) }}</td>
                         <td class="money">{{ number_format($item['rate_pcs'], 2) }}</td>
-                        <td class="num">
-                            {{ $item['qty'] }}
-                            @if ($item['boxes'] !== null)<br><span class="qty-box">({{ $item['boxes'] }} box)</span>@endif
-                        </td>
+                        <td class="num">{{ $item['qty'] }}@if ($item['per_box'] !== null) ({{ $item['per_box'] }})@endif</td>
                         <td class="money">{{ number_format($item['amount'], 2) }}</td>
                     </tr>
                 @endforeach

@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Order;
 
+use App\Application\DTOs\Order\CreateOrderItemDTO;
 use App\Application\Services\Order\OrderService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Order\MoveOrderItemRequest;
+use App\Http\Requests\Api\V1\Order\StoreOrderItemRequest;
 use App\Http\Requests\Api\V1\Order\UpdateOrderItemRequest;
 use App\Http\Resources\Api\V1\Order\OrderResource;
 use App\Models\OrderItem;
+use App\Models\OrderRoom;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -21,6 +24,23 @@ final class OrderItemController extends Controller
     public function __construct(
         private readonly OrderService $orderService,
     ) {}
+
+    /**
+     * POST /order-rooms/{orderRoom}/items — add a new item to an existing room.
+     * Returns the reloaded parent order detail.
+     */
+    public function store(StoreOrderItemRequest $request, OrderRoom $orderRoom): JsonResponse
+    {
+        $order = $this->orderService->addItem(
+            $orderRoom,
+            CreateOrderItemDTO::fromArray($request->validated()),
+        );
+
+        return $this->success(
+            data: OrderResource::make($order),
+            message: 'Item added.',
+        );
+    }
 
     /**
      * PATCH /order-items/{orderItem} — update mutable item fields (quantities,

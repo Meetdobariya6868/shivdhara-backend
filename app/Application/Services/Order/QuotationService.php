@@ -38,11 +38,27 @@ final class QuotationService
      */
     private function buildViewData(Order $order, string $mode): array
     {
-        $rooms = $order->rooms->map(fn ($room, int $index): array => [
-            'sr'    => $index + 1,
-            'name'  => $room->room_name,
-            'items' => $room->items->map(fn ($item): array => $this->itemRow($item, $mode))->all(),
-        ])->all();
+        // A room named "0" is a sentinel for "this order has no rooms": its header
+        // row is suppressed and its items are numbered sequentially (1, 2, 3…) in
+        // the Sr.No column. Any other room name keeps the grouped layout — a red
+        // header row per room, with items left unnumbered underneath.
+        $itemSr = 0;
+
+        $rooms = $order->rooms->map(function ($room, int $index) use ($mode, &$itemSr): array {
+            $flat = trim((string) $room->room_name) === '0';
+
+            return [
+                'flat'  => $flat,
+                'sr'    => $index + 1,
+                'name'  => $room->room_name,
+                'items' => $room->items->map(function ($item) use ($mode, $flat, &$itemSr): array {
+                    $row = $this->itemRow($item, $mode);
+                    $row['sr'] = $flat ? ++$itemSr : null;
+
+                    return $row;
+                })->all(),
+            ];
+        })->all();
 
         $freight    = (float) $order->transportation_charge;
         $paid       = (float) $order->advance_payment;
