@@ -22,6 +22,7 @@ final class VariantRateResource extends JsonResource
     {
         return [
             'id'            => $this->id,
+            'code'          => $this->code,
             'size'          => $this->size,
             'finish'        => $this->finish,
             'thickness'     => $this->thickness,

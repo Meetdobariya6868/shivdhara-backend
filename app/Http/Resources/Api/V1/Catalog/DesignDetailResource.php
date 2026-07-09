@@ -21,7 +21,6 @@ final class DesignDetailResource extends JsonResource
     {
         return [
             'id'          => $this->id,
-            'design_code' => $this->design_code,
             'design_name' => $this->design_name,
             'is_active'   => $this->is_active,
             'company'     => [

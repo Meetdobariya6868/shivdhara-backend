@@ -21,6 +21,7 @@ final class DesignVariantResource extends JsonResource
     {
         return [
             'id'            => $this->id,
+            'code'          => $this->code,
             'size'          => $this->size,
             'finish'        => $this->finish,
             'thickness'     => $this->thickness,
@@ -29,7 +30,6 @@ final class DesignVariantResource extends JsonResource
             'design'        => [
                 'id'          => $this->design?->id,
                 'design_name' => $this->design?->design_name,
-                'design_code' => $this->design?->design_code,
                 'company'     => [
                     'id'           => $this->design?->company?->id,
                     'company_name' => $this->design?->company?->company_name,

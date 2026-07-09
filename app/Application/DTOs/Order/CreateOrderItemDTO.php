@@ -16,6 +16,11 @@ use App\Application\DTOs\BaseDTO;
  * catalogue rows). It is null when the user typed a brand-new product, in which
  * case the service falls back to the free-text find-or-create.
  *
+ * Rates are distinct and each maps to its own column:
+ *   - purchaseRate / sellRate are the catalogue variant's rates (used to seed a
+ *     newly-created variant; not stored on the order item).
+ *   - sqftRate is the per-order charged rate, stored as order_items.sqft_rate.
+ *
  * The per-item price (price_per_item) is supplied here because it is
  * user-editable in the "Add Detail" popup (auto-filled from area × sqft_rate,
  * but overridable). The line total (product_total) is derived server-side as
@@ -37,8 +42,9 @@ final class CreateOrderItemDTO extends BaseDTO
         public readonly string $measurementUnit,  // 'mm' | 'inch' | 'feet'
         public readonly float $height,
         public readonly float $width,
-        public readonly float $purchaseRate,
-        public readonly float $sellRate,
+        public readonly float $purchaseRate,      // catalogue purchase rate
+        public readonly float $sellRate,          // catalogue sell rate
+        public readonly float $sqftRate,          // per-order charged rate → order_items.sqft_rate
         public readonly float $pricePerItem,
     ) {}
 
@@ -61,6 +67,7 @@ final class CreateOrderItemDTO extends BaseDTO
             width: (float) $data['width'],
             purchaseRate: (float) $data['purchase_rate'],
             sellRate: (float) $data['sell_rate'],
+            sqftRate: (float) $data['sqft_rate'],
             pricePerItem: (float) $data['price_per_item'],
         );
     }
@@ -84,6 +91,7 @@ final class CreateOrderItemDTO extends BaseDTO
             'width'              => $this->width,
             'purchase_rate'      => $this->purchaseRate,
             'sell_rate'          => $this->sellRate,
+            'sqft_rate'          => $this->sqftRate,
             'price_per_item'     => $this->pricePerItem,
         ];
     }

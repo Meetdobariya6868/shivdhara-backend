@@ -6,6 +6,7 @@ namespace App\Infrastructure\Persistence\Eloquent\Repositories;
 
 use App\Domain\Contracts\DesignRepositoryInterface;
 use App\Models\Design;
+use App\Models\DesignVariant;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -22,7 +23,15 @@ class DesignRepository implements DesignRepositoryInterface
     {
         $query = Design::query()
             ->with('company:id,company_name')
-            ->withCount('variants');
+            ->withCount('variants')
+            // The variant code to show on the list card when the design has a
+            // single variant (the DesignResource gates it on variants_count).
+            ->addSelect([
+                'sole_variant_code' => DesignVariant::query()
+                    ->select('code')
+                    ->whereColumn('design_id', 'designs.id')
+                    ->limit(1),
+            ]);
 
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
@@ -87,7 +96,7 @@ class DesignRepository implements DesignRepositoryInterface
             ));
 
             $nameIds->whereRaw(
-                'MATCH(designs.design_name, designs.design_code) AGAINST (? IN BOOLEAN MODE)',
+                'MATCH(designs.design_name) AGAINST (? IN BOOLEAN MODE)',
                 [$boolean],
             );
             $companyIds->whereRaw(
@@ -101,14 +110,19 @@ class DesignRepository implements DesignRepositoryInterface
             $companyIds->where('companies.company_name', 'like', $prefix);
         }
 
-        // Design codes are random identifiers (e.g. "d642326b"), so match them
-        // with a substring LIKE — reliable for a full or partial code, which
-        // FULLTEXT can't do for arbitrary substrings.
-        $codeIds = Design::query()
+        // Product codes are random identifiers (e.g. "d642326b") living on the
+        // variant, so match them with a substring LIKE — reliable for a full or
+        // partial code, which FULLTEXT can't do for arbitrary substrings. A
+        // design matches when any of its variants' codes match.
+        $variantCodeIds = Design::query()
             ->select('designs.id')
-            ->where('designs.design_code', 'like', '%'.addcslashes($search, '%_\\').'%');
+            ->join('design_variants', 'design_variants.design_id', '=', 'designs.id')
+            ->where('design_variants.code', 'like', '%'.addcslashes($search, '%_\\').'%');
 
-        $query->whereIn('designs.id', $nameIds->union($codeIds)->union($companyIds));
+        $query->whereIn(
+            'designs.id',
+            $nameIds->union($companyIds)->union($variantCodeIds),
+        );
     }
 
     /** Strip boolean-mode operators so user input can't alter the query semantics. */

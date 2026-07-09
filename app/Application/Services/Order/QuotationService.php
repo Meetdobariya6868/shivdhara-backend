@@ -103,8 +103,10 @@ final class QuotationService
 
         return [
             'size'      => $this->sizeLabel($variant),
+            // "code" mode prints the variant's own product code (a quote line is
+            // always a specific variant); "name" mode prints the design name.
             'name'      => $mode === 'code'
-                ? ($design?->design_code ?? '-')
+                ? ($variant?->code ?? '-')
                 : ($design?->design_name ?? '-'),
             // Finish is shown only in "name" mode, under the design name (as printed).
             'finish'    => $mode === 'name' ? ($variant?->finish ?? '') : '',

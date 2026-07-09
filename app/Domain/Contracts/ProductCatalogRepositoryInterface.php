@@ -36,4 +36,12 @@ interface ProductCatalogRepositoryInterface
         float $purchaseRate,
         float $sellRate,
     ): DesignVariant;
+
+    /**
+     * Overwrite a variant's catalogue purchase / sell rate with the given values,
+     * persisting only when either actually changed. Used so the rates typed on an
+     * order update the selected catalogue variant. Returns the (possibly updated)
+     * variant.
+     */
+    public function syncVariantRates(DesignVariant $variant, float $purchaseRate, float $sellRate): DesignVariant;
 }

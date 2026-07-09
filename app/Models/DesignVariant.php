@@ -15,6 +15,7 @@ class DesignVariant extends Model
 
     protected $fillable = [
         'design_id',
+        'code',
         'size',
         'finish',
         'thickness',

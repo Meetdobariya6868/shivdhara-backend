@@ -49,7 +49,7 @@ class DesignVariantRepository implements DesignVariantRepositoryInterface
             ));
 
             $designSide = $this->sideQuery('designs', $limit, static fn (Builder $q) => $q->whereRaw(
-                'MATCH(designs.design_name, designs.design_code) AGAINST (? IN BOOLEAN MODE)',
+                'MATCH(designs.design_name) AGAINST (? IN BOOLEAN MODE)',
                 [$boolean],
             ));
             $companySide = $this->sideQuery('companies', $limit, static fn (Builder $q) => $q->whereRaw(
@@ -61,9 +61,9 @@ class DesignVariantRepository implements DesignVariantRepositoryInterface
             $prefix = addcslashes($query, '%_\\').'%';
 
             $designSide = $this->sideQuery('designs', $limit, static fn (Builder $q) => $q->where(
-                static fn (Builder $w) => $w
-                    ->where('designs.design_name', 'like', $prefix)
-                    ->orWhere('designs.design_code', 'like', $prefix),
+                'designs.design_name',
+                'like',
+                $prefix,
             ));
             $companySide = $this->sideQuery('companies', $limit, static fn (Builder $q) => $q->where(
                 'companies.company_name',
@@ -72,8 +72,17 @@ class DesignVariantRepository implements DesignVariantRepositoryInterface
             ));
         }
 
+        // Variant codes are random substrings (like design codes), so match them
+        // with a substring LIKE on design_variants.code — regardless of token
+        // length, so a user can paste a full or partial variant code.
+        $variantCodeSide = $this->sideQuery('designs', $limit, static fn (Builder $q): Builder => $q->where(
+            'design_variants.code',
+            'like',
+            '%'.addcslashes($query, '%_\\').'%',
+        ));
+
         /** @var Collection<int, DesignVariant> $variants */
-        $variants = $designSide->union($companySide)->get();
+        $variants = $designSide->union($companySide)->union($variantCodeSide)->get();
 
         return $variants
             ->load('design.company')

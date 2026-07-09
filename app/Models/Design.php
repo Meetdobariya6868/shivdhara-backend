@@ -15,7 +15,6 @@ class Design extends Model
 
     protected $fillable = [
         'company_id',
-        'design_code',
         'design_name',
         'is_active',
     ];

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Infrastructure\Persistence\Eloquent\Repositories;
 
 use App\Domain\Contracts\ProductCatalogRepositoryInterface;
+use App\Domain\Support\CatalogCodeGenerator;
 use App\Models\Company;
 use App\Models\Design;
 use App\Models\DesignVariant;
-use Illuminate\Support\Str;
 
 /**
  * Resolves the catalogue graph for an order item.
@@ -49,17 +49,30 @@ class ProductCatalogRepository implements ProductCatalogRepositoryInterface
 
         $design = Design::query()->firstOrCreate(
             ['company_id' => $company->id, 'design_name' => $designName],
-            ['design_code' => $this->makeDesignCode($designName), 'is_active' => true],
+            ['is_active' => true],
         );
+
+        $size      = trim($size);
+        $finish    = trim($finish);
+        $thickness = trim($thickness);
 
         return DesignVariant::query()->firstOrCreate(
             [
                 'design_id' => $design->id,
-                'size'      => trim($size),
-                'finish'    => trim($finish),
-                'thickness' => trim($thickness),
+                'size'      => $size,
+                'finish'    => $finish,
+                'thickness' => $thickness,
             ],
             [
+                'code'          => $this->makeVariantCode(
+                    $company->id,
+                    $designName,
+                    $size,
+                    $finish,
+                    $thickness,
+                    $purchaseRate,
+                    $sellRate,
+                ),
                 'purchase_rate' => $purchaseRate,
                 'sell_rate'     => $sellRate,
                 'is_active'     => true,
@@ -67,13 +80,49 @@ class ProductCatalogRepository implements ProductCatalogRepositoryInterface
         );
     }
 
-    /**
-     * Build a design code from an 8-character hash of the design name.
-     * Deterministic (the same name always yields the same code) and short
-     * enough to type/search, at a negligible collision risk per company.
-     */
-    private function makeDesignCode(string $designName): string
+    public function syncVariantRates(DesignVariant $variant, float $purchaseRate, float $sellRate): DesignVariant
     {
-        return Str::substr(md5($designName), 0, 8);
+        // Compare at 2-decimal precision (the stored scale) to avoid float noise
+        // and needless writes when nothing changed.
+        $changed = number_format((float) $variant->purchase_rate, 2, '.', '') !== number_format($purchaseRate, 2, '.', '')
+            || number_format((float) $variant->sell_rate, 2, '.', '') !== number_format($sellRate, 2, '.', '');
+
+        if ($changed) {
+            $variant->purchase_rate = $purchaseRate;
+            $variant->sell_rate = $sellRate;
+            $variant->save();
+        }
+
+        return $variant;
+    }
+
+    /**
+     * The catalogue's single product code, unique across all variants. Derived
+     * from the variant's full identity — company + design + size/finish/thickness
+     * + rates — so two variants never share a code, even across companies.
+     */
+    private function makeVariantCode(
+        int $companyId,
+        string $designName,
+        string $size,
+        string $finish,
+        string $thickness,
+        float $purchaseRate,
+        float $sellRate,
+    ): string {
+        return CatalogCodeGenerator::unique(
+            CatalogCodeGenerator::variantSeed(
+                $companyId,
+                $designName,
+                $size,
+                $finish,
+                $thickness,
+                $purchaseRate,
+                $sellRate,
+            ),
+            static fn (string $code): bool => DesignVariant::withTrashed()
+                ->where('code', $code)
+                ->exists(),
+        );
     }
 }

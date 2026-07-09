@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Domain\Support\CatalogCodeGenerator;
 use App\Models\Company;
 use App\Models\Design;
 use App\Models\DesignVariant;
@@ -32,7 +33,6 @@ class CatalogSeeder extends Seeder
         $catalog = [
             [
                 'company'     => 'Kajaria Ceramics',
-                'design_code' => 'KAJ-001',
                 'design_name' => 'Kajaria Whitewood',
                 'variants'    => [
                     ['size' => '24x24', 'finish' => 'Glossy', 'thickness' => '9mm', 'purchase_rate' => 38.00, 'sell_rate' => 52.00],
@@ -41,7 +41,6 @@ class CatalogSeeder extends Seeder
             ],
             [
                 'company'     => 'Kajaria Ceramics',
-                'design_code' => 'KAJ-002',
                 'design_name' => 'Kajaria Sandstorm',
                 'variants'    => [
                     ['size' => '32x32', 'finish' => 'Matt',    'thickness' => '9mm',  'purchase_rate' => 42.00, 'sell_rate' => 58.00],
@@ -50,7 +49,6 @@ class CatalogSeeder extends Seeder
             ],
             [
                 'company'     => 'Asian Granito',
-                'design_code' => 'AGI-001',
                 'design_name' => 'AGI Statuario Gold',
                 'variants'    => [
                     ['size' => '24x48', 'finish' => 'Polished', 'thickness' => '10mm', 'purchase_rate' => 65.00, 'sell_rate' => 88.00],
@@ -59,7 +57,6 @@ class CatalogSeeder extends Seeder
             ],
             [
                 'company'     => 'Asian Granito',
-                'design_code' => 'AGI-002',
                 'design_name' => 'AGI Onyx Grey',
                 'variants'    => [
                     ['size' => '800x1600', 'finish' => 'Satin', 'thickness' => '12mm', 'purchase_rate' => 95.00, 'sell_rate' => 130.00],
@@ -67,7 +64,6 @@ class CatalogSeeder extends Seeder
             ],
             [
                 'company'     => 'Somany Ceramics',
-                'design_code' => 'SOM-001',
                 'design_name' => 'Somany White Gloss',
                 'variants'    => [
                     ['size' => '12x12', 'finish' => 'Glossy',   'thickness' => '7mm', 'purchase_rate' => 18.00, 'sell_rate' => 26.00],
@@ -76,7 +72,6 @@ class CatalogSeeder extends Seeder
             ],
             [
                 'company'     => 'Nitco Tiles',
-                'design_code' => 'NIT-001',
                 'design_name' => 'Nitco Carrara White',
                 'variants'    => [
                     ['size' => '24x48', 'finish' => 'Polished', 'thickness' => '15mm', 'purchase_rate' => 120.00, 'sell_rate' => 165.00],
@@ -84,7 +79,6 @@ class CatalogSeeder extends Seeder
             ],
             [
                 'company'     => 'RAK Ceramics',
-                'design_code' => 'RAK-001',
                 'design_name' => 'RAK Velvet Beige',
                 'variants'    => [
                     ['size' => '48x48', 'finish' => 'Matt',   'thickness' => '10mm', 'purchase_rate' => 85.00,  'sell_rate' => 118.00],
@@ -97,15 +91,23 @@ class CatalogSeeder extends Seeder
             $design = Design::firstOrCreate(
                 [
                     'company_id'  => $companyMap[$entry['company']],
-                    'design_code' => $entry['design_code'],
-                ],
-                [
                     'design_name' => $entry['design_name'],
-                    'is_active'   => true,
                 ],
+                ['is_active' => true],
             );
 
             foreach ($entry['variants'] as $v) {
+                $code = CatalogCodeGenerator::unique(
+                    CatalogCodeGenerator::variantSeed(
+                        $companyMap[$entry['company']],
+                        $entry['design_name'],
+                        $v['size'],
+                        $v['finish'],
+                        $v['thickness'],
+                    ),
+                    static fn (string $c): bool => DesignVariant::withTrashed()->where('code', $c)->exists(),
+                );
+
                 DesignVariant::firstOrCreate(
                     [
                         'design_id' => $design->id,
@@ -114,6 +116,7 @@ class CatalogSeeder extends Seeder
                         'thickness' => $v['thickness'],
                     ],
                     [
+                        'code'          => $code,
                         'purchase_rate' => $v['purchase_rate'],
                         'sell_rate'     => $v['sell_rate'],
                         'is_active'     => true,

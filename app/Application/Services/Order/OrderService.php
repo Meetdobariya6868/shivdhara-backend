@@ -173,6 +173,10 @@ final class OrderService extends BaseService
                             sellRate: $itemDto->sellRate,
                         );
 
+                    // The typed/selected rates always win for the catalogue: a new
+                    // variant is seeded above, an existing one is updated here.
+                    $this->catalog->syncVariantRates($variant, $itemDto->purchaseRate, $itemDto->sellRate);
+
                     $piecesPerBox = $type === ItemType::Box ? $itemDto->piecesPerBox : null;
                     $productTotal = $this->computeProductTotal(
                         $type,
@@ -190,7 +194,7 @@ final class OrderService extends BaseService
                         'measurement_unit'   => $unit->value,
                         'height'             => $itemDto->height,
                         'width'              => $itemDto->width,
-                        'sqft_rate'          => $itemDto->sellRate,
+                        'sqft_rate'          => $itemDto->sqftRate,
                         'price_per_item'     => $itemDto->pricePerItem,
                         'product_total'      => $productTotal,
                         'sort_order'         => $index,
@@ -321,6 +325,10 @@ final class OrderService extends BaseService
                     sellRate: $dto->sellRate,
                 );
 
+            // The typed/selected rates always win for the catalogue: a new variant
+            // is seeded above, an existing one is updated here.
+            $this->catalog->syncVariantRates($variant, $dto->purchaseRate, $dto->sellRate);
+
             $type         = ItemType::from($dto->itemType);
             $piecesPerBox = $type === ItemType::Box ? $dto->piecesPerBox : null;
 
@@ -333,7 +341,7 @@ final class OrderService extends BaseService
                 'measurement_unit'   => $dto->measurementUnit,
                 'height'             => $dto->height,
                 'width'              => $dto->width,
-                'sqft_rate'          => $dto->sellRate,
+                'sqft_rate'          => $dto->sqftRate,
                 'price_per_item'     => $dto->pricePerItem,
                 'product_total'      => $this->computeProductTotal(
                     $type,

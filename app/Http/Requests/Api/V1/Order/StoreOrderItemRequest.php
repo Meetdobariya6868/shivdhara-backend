@@ -47,6 +47,8 @@ final class StoreOrderItemRequest extends FormRequest
             'width'              => ['required', 'numeric', 'gt:0'],
             'purchase_rate'      => ['required', 'numeric', 'min:0'],
             'sell_rate'          => ['required', 'numeric', 'min:0'],
+            // The per-order charged rate, stored as order_items.sqft_rate.
+            'sqft_rate'          => ['required', 'numeric', 'min:0'],
             // Per-item price (editable in the UI); product_total is derived server-side.
             'price_per_item'     => ['required', 'numeric', 'min:0'],
 
