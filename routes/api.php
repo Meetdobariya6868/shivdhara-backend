@@ -133,6 +133,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     */
     Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         Route::get('/designs', [DesignController::class, 'index'])->name('designs.index');
+        // Registered before /designs/{design} so "export" isn't bound as a design id.
+        Route::get('/designs/export', [DesignController::class, 'export'])->name('designs.export');
         Route::get('/designs/{design}', [DesignController::class, 'show'])->name('designs.show');
         Route::patch('/design-variants/{designVariant}', [DesignVariantController::class, 'update'])->name('design-variants.update');
     });

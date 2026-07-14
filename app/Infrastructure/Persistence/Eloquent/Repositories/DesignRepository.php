@@ -9,6 +9,7 @@ use App\Models\Design;
 use App\Models\DesignVariant;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
 class DesignRepository implements DesignRepositoryInterface
 {
@@ -58,6 +59,26 @@ class DesignRepository implements DesignRepositoryInterface
             ->find($id);
 
         return $design;
+    }
+
+    public function allWithVariants(): Collection
+    {
+        /** @var Collection<int, Design> $designs */
+        $designs = Design::query()
+            ->with([
+                'company:id,company_name',
+                'variants' => static fn ($q) => $q
+                    ->orderBy('size')
+                    ->orderBy('finish')
+                    ->orderBy('thickness'),
+            ])
+            ->join('companies', 'companies.id', '=', 'designs.company_id')
+            ->orderBy('companies.company_name')
+            ->orderBy('designs.design_name')
+            ->select('designs.*')
+            ->get();
+
+        return $designs;
     }
 
     /**

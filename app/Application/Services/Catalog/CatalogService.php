@@ -10,6 +10,7 @@ use App\Domain\Contracts\DesignVariantRepositoryInterface;
 use App\Models\Design;
 use App\Models\DesignVariant;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 
@@ -45,6 +46,16 @@ final class CatalogService extends BaseService
     {
         return $this->designRepository->findWithVariants($id)
             ?? throw (new ModelNotFoundException())->setModel(Design::class, [$id]);
+    }
+
+    /**
+     * Every design with its company and variants, for the full catalogue export.
+     *
+     * @return Collection<int, Design>
+     */
+    public function designsForExport(): Collection
+    {
+        return $this->designRepository->allWithVariants();
     }
 
     /**
