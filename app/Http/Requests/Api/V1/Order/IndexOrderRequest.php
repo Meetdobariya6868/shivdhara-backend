@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Api\V1\Order;
 
+use App\Domain\Enums\OrderStatus;
 use App\Models\Order;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 /**
  * Validates the query parameters for the paginated order list.
@@ -34,6 +36,7 @@ final class IndexOrderRequest extends FormRequest
             'order_category_id' => ['sometimes', 'nullable', 'integer'],
             'order_type_id'     => ['sometimes', 'nullable', 'integer'],
             'creator_id'        => ['sometimes', 'nullable', 'integer'],
+            'status'            => ['sometimes', 'nullable', Rule::enum(OrderStatus::class)],
         ];
     }
 

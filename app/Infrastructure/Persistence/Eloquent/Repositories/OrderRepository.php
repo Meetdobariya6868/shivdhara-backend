@@ -89,6 +89,10 @@ class OrderRepository extends BaseRepository implements OrderRepositoryInterface
         if (! empty($filters['creator_id'])) {
             $query->where('creator_id', (int) $filters['creator_id']);
         }
+
+        if (! empty($filters['status'])) {
+            $query->where('status', (string) $filters['status']);
+        }
     }
 
     /**
