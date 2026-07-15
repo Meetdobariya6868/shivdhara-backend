@@ -12,6 +12,7 @@ use App\Domain\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Order\IndexOrderRequest;
 use App\Http\Requests\Api\V1\Order\QuotationRequest;
+use App\Http\Requests\Api\V1\Order\SharedQuotationRequest;
 use App\Http\Requests\Api\V1\Order\StoreOrderRequest;
 use App\Http\Requests\Api\V1\Order\UpdateOrderDetailsRequest;
 use App\Http\Requests\Api\V1\Order\UpdateOrderStatusRequest;
@@ -19,6 +20,7 @@ use App\Http\Requests\Api\V1\Order\UploadOrderItemImageRequest;
 use App\Http\Resources\Api\V1\Order\OrderCategoryResource;
 use App\Http\Resources\Api\V1\Order\OrderResource;
 use App\Http\Resources\Api\V1\Order\OrderTypeResource;
+use App\Http\Resources\Api\V1\Order\QuotationShareLinkResource;
 use App\Http\Resources\Api\V1\Order\SalesmanOptionResource;
 use App\Models\Order;
 use App\Models\User;
@@ -113,6 +115,43 @@ final class OrderController extends Controller
      * via QuotationRequest (OrderPolicy@view).
      */
     public function quotation(QuotationRequest $request, Order $order): Response
+    {
+        /** @var 'name'|'code' $format */
+        $format = $request->validated('format');
+
+        $detail = $this->orderService->getOrderDetail($order->id);
+
+        return $this->quotationService->render($detail, $format)
+            ->stream("quotation-order-{$order->id}-{$format}.pdf");
+    }
+
+    /**
+     * GET /orders/{order}/quotation/share-link?format=name|code — a temporary,
+     * signed, publicly-openable link to the quotation PDF, for sharing outside
+     * the app (e.g. WhatsApp). Same viewer authorization as the PDF itself
+     * (QuotationRequest → OrderPolicy@view); the link itself is time-limited and
+     * tamper-proof via URL signing.
+     */
+    public function shareLink(QuotationRequest $request, Order $order): JsonResponse
+    {
+        /** @var 'name'|'code' $format */
+        $format = $request->validated('format');
+
+        return $this->success(
+            data: new QuotationShareLinkResource(
+                $this->quotationService->shareUrl($order, $format),
+            ),
+            message: 'Quotation share link generated.',
+        );
+    }
+
+    /**
+     * GET /orders/{order}/quotation/shared?format=…&signature=… — public access
+     * to the quotation PDF for recipients outside the app (the WhatsApp link
+     * target). No auth token: the temporary signature (issued by shareLink and
+     * enforced by the `signed` middleware) authorizes and time-limits it.
+     */
+    public function sharedQuotation(SharedQuotationRequest $request, Order $order): Response
     {
         /** @var 'name'|'code' $format */
         $format = $request->validated('format');

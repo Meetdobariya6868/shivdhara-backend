@@ -31,7 +31,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     |------------------------------------------------------------------
     */
     Route::get('/health', static fn (): JsonResponse => response()->json([
-        'status'  => 'ok',
+        'status' => 'ok',
         'service' => config('app.name'),
         'version' => 'v1',
     ]))->name('health');
@@ -102,6 +102,11 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         // Order quotation PDF (?format=name|code) — same viewer authorization.
         Route::get('/orders/{order}/quotation', [OrderController::class, 'quotation'])->name('orders.quotation');
 
+        // Temporary signed link to the quotation PDF for sharing on WhatsApp.
+        // Registered before nothing conflicting; viewer-authorized (OrderPolicy@view).
+        Route::get('/orders/{order}/quotation/share-link', [OrderController::class, 'shareLink'])
+            ->name('orders.quotation.share-link');
+
         // Create order — shared by admin + salesman (authorization via OrderPolicy@create)
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
         Route::post('/order-item-images', [OrderController::class, 'uploadItemImage'])->name('orders.item-images.store');
@@ -124,6 +129,19 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
 
         // Catalogue autocomplete for the Add-Item modal (FULLTEXT-backed search).
         Route::get('/design-variants/search', [DesignVariantController::class, 'search'])->name('design-variants.search');
+    });
+
+    /*
+    |------------------------------------------------------------------
+    | Public signed links (no auth token — integrity via URL signature)
+    |------------------------------------------------------------------
+    | The WhatsApp share target: a customer opens this in their browser.
+    | The `signed` middleware validates the temporary signature issued by
+    | GET /orders/{order}/quotation/share-link, so no Sanctum token is needed.
+    */
+    Route::middleware('signed')->group(function (): void {
+        Route::get('/orders/{order}/quotation/shared', [OrderController::class, 'sharedQuotation'])
+            ->name('orders.quotation.shared');
     });
 
     /*

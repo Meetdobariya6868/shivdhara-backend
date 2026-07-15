@@ -12,13 +12,16 @@
             margin: 0;
         }
         .header {
-            text-align: center;
-            background: #e5e7eb;
-            padding: 10px 0 6px;
+            background-color: rgb(212, 212, 212);
+            padding: 4px 14px 4px;
             margin-bottom: 2px;
         }
-        .header .company { font-size: 18px; font-weight: bold; letter-spacing: 1px; color: #334155; }
-        .header .tagline { font-size: 9px; letter-spacing: 3px; color: #64748b; }
+        .header table { margin: 0 auto; border-collapse: collapse; }
+        .header .logo-cell { width: 100px; vertical-align: middle; }
+        .header .logo { width: 90px; height: 90px; }
+        .header .text-cell { vertical-align: middle; text-align: left; }
+        .header .company { font-size: 24px; font-weight: bold; letter-spacing: 1px; color: #92868a; }
+        .header .tagline { font-size: 14px; letter-spacing: 1px; color: #8ea2aa; }
         .doc-title { text-align: center; font-size: 12px; font-weight: bold; letter-spacing: 1px; margin: 6px 0 12px; }
 
         .meta { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
@@ -57,8 +60,19 @@
 </head>
 <body>
     <div class="header">
-        <div class="company">{{ $company['company_name'] }}</div>
-        <div class="tagline">{{ $company['tagline'] }}</div>
+        <table>
+            <tr>
+                <td class="logo-cell">
+                    @if ($logo)
+                        <img class="logo" src="{{ $logo }}" alt="">
+                    @endif
+                </td>
+                <td class="text-cell">
+                    <div class="company">{{ $company['company_name'] }}</div>
+                    <div class="tagline">{{ $company['tagline'] }}</div>
+                </td>
+            </tr>
+        </table>
     </div>
     <div class="doc-title">QUOTATION</div>
 

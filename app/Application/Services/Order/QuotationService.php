@@ -9,7 +9,9 @@ use App\Models\DesignVariant;
 use App\Models\Order;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Barryvdh\DomPDF\PDF as DomPdf;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 /**
  * Renders an order quotation PDF (barryvdh/laravel-dompdf).
@@ -33,6 +35,30 @@ final class QuotationService
     }
 
     /**
+     * Build a temporary, signed, publicly-openable URL to this order's quotation
+     * PDF for sharing outside the app (e.g. WhatsApp). The signature makes the
+     * link tamper-proof (the order id and format are signed) and it expires after
+     * the configured TTL, after which it must be regenerated from inside the app.
+     *
+     * @param  'name'|'code'  $mode
+     * @return array{url: string, expires_at: string}
+     */
+    public function shareUrl(Order $order, string $mode): array
+    {
+        $expiresAt = Carbon::now()->addDays(
+            (int) config('quotation.share_link_ttl_days', 30),
+        );
+
+        $url = URL::temporarySignedRoute(
+            'api.v1.orders.quotation.shared',
+            $expiresAt,
+            ['order' => $order->id, 'format' => $mode],
+        );
+
+        return ['url' => $url, 'expires_at' => $expiresAt->toISOString()];
+    }
+
+    /**
      * @param  'name'|'code'  $mode
      * @return array<string, mixed>
      */
@@ -48,9 +74,9 @@ final class QuotationService
             $flat = trim((string) $room->room_name) === '0';
 
             return [
-                'flat'  => $flat,
-                'sr'    => $index + 1,
-                'name'  => $room->room_name,
+                'flat' => $flat,
+                'sr' => $index + 1,
+                'name' => $room->room_name,
                 'items' => $room->items->map(function ($item) use ($mode, $flat, &$itemSr): array {
                     $row = $this->itemRow($item, $mode);
                     $row['sr'] = $flat ? ++$itemSr : null;
@@ -60,28 +86,29 @@ final class QuotationService
             ];
         })->all();
 
-        $freight    = (float) $order->transportation_charge;
-        $paid       = (float) $order->advance_payment;
+        $freight = (float) $order->transportation_charge;
+        $paid = (float) $order->advance_payment;
         $grandTotal = (float) $order->grand_total;
 
         return [
-            'company'      => config('quotation'),
-            'mode'         => $mode,
-            'date'         => $order->created_at?->format('d/m/Y') ?? '',
-            'client'       => [
-                'name'    => $order->customer?->name ?? '',
+            'company' => config('quotation'),
+            'logo' => $this->logoDataUri(),
+            'mode' => $mode,
+            'date' => $order->created_at?->format('d/m/Y') ?? '',
+            'client' => [
+                'name' => $order->customer?->name ?? '',
                 'contact' => $order->customer?->contact ?? '',
             ],
             'salesManager' => [
-                'name'    => $order->creator?->name ?? '',
+                'name' => $order->creator?->name ?? '',
                 'contact' => $order->creator?->mobile_number ?? '',
             ],
             'architectName' => $order->architect_name,
-            'rooms'         => $rooms,
-            'totals'        => [
-                'freight'     => $freight,
-                'paid'        => $paid,
-                'payable'     => round($grandTotal - $paid, 2),
+            'rooms' => $rooms,
+            'totals' => [
+                'freight' => $freight,
+                'paid' => $paid,
+                'payable' => round($grandTotal - $paid, 2),
                 'grand_total' => $grandTotal,
             ],
         ];
@@ -94,7 +121,7 @@ final class QuotationService
     private function itemRow(mixed $item, string $mode): array
     {
         $variant = $item->designVariant;
-        $design  = $variant?->design;
+        $design = $variant?->design;
 
         // QTY display: a box item shows its box count with pieces-per-box in
         // parentheses — "10 (5)" = 10 boxes of 5 pieces each; a piece item shows
@@ -102,20 +129,20 @@ final class QuotationService
         $isBox = $item->item_type === ItemType::Box;
 
         return [
-            'size'      => $this->sizeLabel($variant),
+            'size' => $this->sizeLabel($variant),
             // "code" mode prints the variant's own product code (a quote line is
             // always a specific variant); "name" mode prints the design name.
-            'name'      => $mode === 'code'
+            'name' => $mode === 'code'
                 ? ($variant?->code ?? '-')
                 : ($design?->design_name ?? '-'),
             // Finish is shown only in "name" mode, under the design name (as printed).
-            'finish'    => $mode === 'name' ? ($variant?->finish ?? '') : '',
-            'image'     => $this->imageDataUri($item->product_image_path),
+            'finish' => $mode === 'name' ? ($variant?->finish ?? '') : '',
+            'image' => $this->imageDataUri($item->product_image_path),
             'sqft_rate' => (float) $item->sqft_rate,
-            'rate_pcs'  => (float) $item->price_per_item,
-            'qty'       => (int) $item->quantity,
-            'per_box'   => $isBox ? (int) $item->pieces_per_box : null,
-            'amount'    => (float) $item->product_total,
+            'rate_pcs' => (float) $item->price_per_item,
+            'qty' => (int) $item->quantity,
+            'per_box' => $isBox ? (int) $item->pieces_per_box : null,
+            'amount' => (float) $item->product_total,
         ];
     }
 
@@ -149,5 +176,19 @@ final class QuotationService
         $mime = $disk->mimeType($path) ?: 'image/jpeg';
 
         return 'data:'.$mime.';base64,'.base64_encode($disk->get($path));
+    }
+
+    /**
+     * Base64 data URI for the company letterhead logo. Bundled as a static app
+     * asset (not a user upload) and embedded so dompdf stays self-contained.
+     */
+    private function logoDataUri(): ?string
+    {
+        $path = public_path('images/quotation-logo.png');
+        if (! is_file($path)) {
+            return null;
+        }
+
+        return 'data:image/png;base64,'.base64_encode((string) file_get_contents($path));
     }
 }

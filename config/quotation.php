@@ -15,12 +15,17 @@ declare(strict_types=1);
 
 return [
     // Letterhead shown at the top of every quotation.
-    'company_name' => 'SHIVDHARA MARBO GRANITO',
-    'tagline'      => 'MARBO GRANITO',
+    'company_name' => 'SHIVDHARA',
+    'tagline' => 'MARBO GRANITO',
 
     // Suffix for money amounts. Kept as "Rs" (not the ₹ glyph) so it renders in
     // dompdf's default font, matching the printed quotation.
     'currency' => 'Rs',
+
+    // How long a shared quotation link (signed URL used for WhatsApp sharing)
+    // stays valid, in days. After this the public link 403s and must be
+    // regenerated from inside the app.
+    'share_link_ttl_days' => (int) env('QUOTATION_SHARE_LINK_TTL_DAYS', 30),
 
     // Terms & Conditions printed at the foot of the quotation, in order.
     'terms' => [
