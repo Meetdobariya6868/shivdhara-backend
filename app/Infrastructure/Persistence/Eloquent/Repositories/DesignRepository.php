@@ -23,6 +23,9 @@ class DesignRepository implements DesignRepositoryInterface
     public function paginate(array $filters, int $perPage): LengthAwarePaginator
     {
         $query = Design::query()
+            // Explicit designs.* so the search JOIN (applySearch) can't make the
+            // selected columns ambiguous; the two addSelect subqueries append to it.
+            ->select('designs.*')
             ->with('company:id,company_name')
             ->withCount('variants')
             // The variant code to show on the list card when the design has a
@@ -40,7 +43,12 @@ class DesignRepository implements DesignRepositoryInterface
         }
 
         /** @var LengthAwarePaginator<int, Design> $result */
-        $result = $query->orderBy('design_name')->paginate($perPage);
+        $result = $query
+            // Latest designs first. id is the tiebreaker so bulk-imported rows
+            // sharing a created_at still get a stable, newest-first order.
+            ->orderByDesc('designs.created_at')
+            ->orderByDesc('designs.id')
+            ->paginate($perPage);
 
         return $result;
     }
@@ -87,9 +95,15 @@ class DesignRepository implements DesignRepositoryInterface
      *
      * Each field is matched by its own FULLTEXT index (a single OR'd MATCH can
      * use neither index and full-scans). We union the design-driven and
-     * company-driven id sets and constrain the outer query by that set, so both
+     * company-driven id sets and JOIN the outer query to that set, so both
      * indexes are used as access paths and the result still paginates/eager-loads
      * normally. Tokens shorter than the FULLTEXT minimum fall back to prefix LIKE.
+     *
+     * The union is joined (joinSub), NOT fed to whereIn(): MySQL executes an
+     * `id IN (<union>)` as a dependent subquery, re-running the whole union once
+     * per row of a full designs scan (~19k loops, seconds per search). Joining a
+     * derived table materializes the id set once, cutting a search from ~3.5s to
+     * ~0.2s. UNION (not UNION ALL) dedupes ids, so the join yields no duplicates.
      *
      * @param  Builder<Design>  $query
      */
@@ -131,19 +145,44 @@ class DesignRepository implements DesignRepositoryInterface
             $companyIds->where('companies.company_name', 'like', $prefix);
         }
 
-        // Product codes are random identifiers (e.g. "d642326b") living on the
-        // variant, so match them with a substring LIKE — reliable for a full or
-        // partial code, which FULLTEXT can't do for arbitrary substrings. A
-        // design matches when any of its variants' codes match.
-        $variantCodeIds = Design::query()
-            ->select('designs.id')
-            ->join('design_variants', 'design_variants.design_id', '=', 'designs.id')
-            ->where('design_variants.code', 'like', '%'.addcslashes($search, '%_\\').'%');
+        $matchedIds = $nameIds->union($companyIds);
 
-        $query->whereIn(
+        // Product codes are random hex identifiers (e.g. "d642326b") living on
+        // the variant, matched by substring LIKE — reliable for a full or partial
+        // code, which FULLTEXT can't do for arbitrary substrings. A design matches
+        // when any of its variants' codes match.
+        //
+        // The substring LIKE can't use the code index (leading %) and full-scans
+        // design_variants, so run it ONLY when the search could actually be a
+        // code: codes are pure hex, so a search containing any non-hex character
+        // (a space, or a letter g–z) cannot match one and the scan is skipped —
+        // which is every ordinary name/company search.
+        if (self::couldBeCode($search)) {
+            $variantCodeIds = Design::query()
+                ->select('designs.id')
+                ->join('design_variants', 'design_variants.design_id', '=', 'designs.id')
+                ->where('design_variants.code', 'like', '%'.addcslashes($search, '%_\\').'%');
+
+            $matchedIds = $matchedIds->union($variantCodeIds);
+        }
+
+        $query->joinSub(
+            $matchedIds,
+            'design_matches',
+            'design_matches.id',
+            '=',
             'designs.id',
-            $nameIds->union($companyIds)->union($variantCodeIds),
         );
+    }
+
+    /**
+     * Whether the search could be a variant code substring. Codes are pure hex
+     * (0-9a-f), so anything containing a non-hex character can never match one —
+     * letting the caller skip the unindexed full-scan for ordinary name searches.
+     */
+    private static function couldBeCode(string $search): bool
+    {
+        return $search !== '' && preg_match('/[^0-9a-fA-F]/', $search) === 0;
     }
 
     /** Strip boolean-mode operators so user input can't alter the query semantics. */

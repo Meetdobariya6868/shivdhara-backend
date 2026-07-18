@@ -131,10 +131,10 @@ final class QuotationService
         return [
             'size' => $this->sizeLabel($variant),
             // "code" mode prints the variant's own product code (a quote line is
-            // always a specific variant); "name" mode prints the design name.
+            // always a specific variant); "name" mode prints "Company - Design".
             'name' => $mode === 'code'
                 ? ($variant?->code ?? '-')
-                : ($design?->design_name ?? '-'),
+                : $this->designLabel($design),
             // Finish is shown only in "name" mode, under the design name (as printed).
             'finish' => $mode === 'name' ? ($variant?->finish ?? '') : '',
             'image' => $this->imageDataUri($item->product_image_path),
@@ -144,6 +144,22 @@ final class QuotationService
             'per_box' => $isBox ? (int) $item->pieces_per_box : null,
             'amount' => (float) $item->product_total,
         ];
+    }
+
+    /**
+     * "Company - Design" for the Design Name column. Falls back to just the
+     * design name when the company is missing, and to "-" when both are absent.
+     */
+    private function designLabel(mixed $design): string
+    {
+        $designName = trim((string) ($design?->design_name ?? ''));
+        $companyName = trim((string) ($design?->company?->company_name ?? ''));
+
+        if ($companyName !== '' && $designName !== '') {
+            return "{$companyName} - {$designName}";
+        }
+
+        return $designName !== '' ? $designName : ($companyName !== '' ? $companyName : '-');
     }
 
     /** "24x24 (9)" — variant size plus the numeric thickness in parentheses. */
