@@ -56,6 +56,9 @@
         .terms .title { font-weight: bold; margin-bottom: 3px; }
         .terms ol { margin: 0; padding-left: 16px; }
         .terms li { margin-bottom: 1px; }
+
+        .brand-strip { margin-top: 12px; text-align: center; }
+        .brand-strip img { display: block; width: 100%; max-width: 100%; height: auto; }
     </style>
 </head>
 <body>
@@ -171,5 +174,11 @@
             @endforeach
         </ol>
     </div>
+
+    @if ($footerImage)
+        <div class="brand-strip">
+            <img src="{{ $footerImage }}" alt="">
+        </div>
+    @endif
 </body>
 </html>

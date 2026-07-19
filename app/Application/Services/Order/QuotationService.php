@@ -96,6 +96,7 @@ final class QuotationService
         return [
             'company' => config('quotation'),
             'logo' => $this->logoDataUri(),
+            'footerImage' => $this->footerImageDataUri(),
             'mode' => $mode,
             'date' => $order->created_at?->format('d/m/Y') ?? '',
             'client' => [
@@ -239,5 +240,20 @@ final class QuotationService
         }
 
         return 'data:image/png;base64,'.base64_encode((string) file_get_contents($path));
+    }
+
+    /**
+     * Base64 data URI for the brand-strip image printed below the Terms &
+     * Conditions on every quotation. Bundled as a static app asset (not a user
+     * upload) and embedded so dompdf stays self-contained.
+     */
+    private function footerImageDataUri(): ?string
+    {
+        $path = public_path('images/imgbg_old.jpg');
+        if (! is_file($path)) {
+            return null;
+        }
+
+        return 'data:image/jpeg;base64,'.base64_encode((string) file_get_contents($path));
     }
 }
