@@ -45,7 +45,7 @@
         .design-name { font-weight: bold; }
         .design-finish { color: #444; font-size: 9px; }
         .thumb { width: 90px; height: 70px; object-fit: cover; }
-        .thumb-empty { display: block; width: 90px; height: 70px; background: #f1f5f9; }
+        .thumb-empty { display: block; width: 90px; height: 70px; margin: 0 auto; background: #f1f5f9; }
 
         table.totals { width: 42%; border-collapse: collapse; margin-left: auto; margin-top: -1px; }
         table.totals td { border: 1px solid #444; padding: 5px 6px; color: #dc2626; }

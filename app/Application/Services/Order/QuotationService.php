@@ -10,8 +10,11 @@ use App\Models\Order;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Barryvdh\DomPDF\PDF as DomPdf;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
+use Throwable;
 
 /**
  * Renders an order quotation PDF (barryvdh/laravel-dompdf).
@@ -175,13 +178,22 @@ final class QuotationService
     }
 
     /**
-     * Base64 data URI for a product image, read from the public disk. Embedding
-     * (vs a remote URL) keeps dompdf self-contained — no network fetch needed.
+     * Base64 data URI for a product image. Two path shapes are stored (see
+     * App\Support\ProductImage): legacy absolute URLs, fetched once over HTTP and
+     * embedded; and relative paths, read from the public disk. Both are inlined
+     * as data URIs so dompdf stays self-contained. Any failure (missing file,
+     * unreachable host, timeout) returns null so the row falls back to an empty
+     * thumbnail instead of breaking the whole PDF.
      */
     private function imageDataUri(?string $path): ?string
     {
-        if ($path === null || $path === '') {
+        $path = $path !== null ? trim($path) : '';
+        if ($path === '') {
             return null;
+        }
+
+        if (Str::startsWith($path, ['http://', 'https://'])) {
+            return $this->remoteImageDataUri($path);
         }
 
         $disk = Storage::disk('public');
@@ -192,6 +204,27 @@ final class QuotationService
         $mime = $disk->mimeType($path) ?: 'image/jpeg';
 
         return 'data:'.$mime.';base64,'.base64_encode($disk->get($path));
+    }
+
+    /**
+     * Fetch a legacy absolute-URL image and inline it. Spaces are encoded so the
+     * request URL is valid; a short timeout keeps one slow image from stalling
+     * the whole quotation.
+     */
+    private function remoteImageDataUri(string $url): ?string
+    {
+        try {
+            $response = Http::timeout(5)->get(str_replace(' ', '%20', $url));
+            if (! $response->successful()) {
+                return null;
+            }
+
+            $mime = $response->header('Content-Type') ?: 'image/jpeg';
+
+            return 'data:'.$mime.';base64,'.base64_encode($response->body());
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /**
